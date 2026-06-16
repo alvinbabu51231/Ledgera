@@ -1,0 +1,55 @@
+{
+  "name": "comberp",
+  "version": "1.0.0",
+  "description": "CombERP - Single owner manufacturing ERP",
+  "scripts": {
+    "dev:frontend": "vite",
+    "dev:backend": "tsx backend/main.ts",
+    "dev:desktop": "wait-on http://localhost:5173 && electron desktop/main.js",
+    "dev": "concurrently \"pnpm dev:backend\" \"pnpm dev:frontend\" \"pnpm dev:desktop\"",
+    "build:frontend": "vite build",
+    "build:desktop": "electron-builder",
+    "start": "pnpm dev"
+  },
+  "dependencies": {
+    "@fastify/cors": "^9.0.1",
+    "@libsql/client": "^0.17.3",
+    "drizzle-orm": "^0.31.2",
+    "fastify": "^4.27.0",
+    "lucide-react": "^0.395.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.24.0",
+    "zod": "^3.23.8",
+    "zustand": "^4.5.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.9",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "concurrently": "^8.2.2",
+    "drizzle-kit": "^0.22.7",
+    "electron": "^42.4.0",
+    "electron-builder": "^24.13.3",
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.2",
+    "vite": "^5.3.3",
+    "wait-on": "^7.2.0"
+  },
+  "main": "desktop/main.js",
+  "build": {
+    "appId": "com.comberp.app",
+    "productName": "CombERP",
+    "directories": {
+      "output": "dist/electron"
+    },
+    "files": [
+      "desktop/**/*",
+      "dist/frontend/**/*",
+      "backend/**/*",
+      "shared/**/*",
+      "package.json"
+    ]
+  }
+}
