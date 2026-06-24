@@ -9,7 +9,7 @@ export const customers = sqliteTable('customers', {
   email: text('email'),
   gst_number: text('gst_number'),
   billing_address: text('billing_address').notNull(),
-  delivery_address: text('delivery_address').notNull(),
+  delivery_address: text('delivery_address'),
   is_active: integer('is_active', { mode: 'boolean' }).default(true).notNull(),
   created_at: text('created_at').default('CURRENT_TIMESTAMP').notNull(),
   updated_at: text('updated_at').default('CURRENT_TIMESTAMP').notNull(),

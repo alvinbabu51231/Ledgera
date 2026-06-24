@@ -6,7 +6,7 @@ const PORT = 3001;
 async function start() {
   try {
     // Initialize SQLite
-    initializeDatabase();
+    await initializeDatabase();
 
     const app = buildApp();
     
