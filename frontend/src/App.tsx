@@ -1,25 +1,44 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Layout } from './components/Layout';
+
+// Pages
+import { Dashboard } from './pages/Dashboard';
+import { SettingsPage } from './pages/Settings';
+
+// Customers
 import { CustomerList } from './pages/customers/CustomerList';
 import { CustomerForm } from './pages/customers/CustomerForm';
 
-// A simple dashboard component since we are only implementing customers
-const Dashboard = () => (
-  <div style={{ backgroundColor: 'white', padding: '32px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-    <h1 style={{ margin: '0 0 16px 0', color: '#0f172a' }}>Dashboard</h1>
-    <p style={{ color: '#475569' }}>Welcome to CombERP MVP. Navigate to Customers to manage the customer master.</p>
-  </div>
-);
+// Products
+import { ProductList } from './pages/products/ProductList';
+import { ProductForm } from './pages/products/ProductForm';
+
+// Companies (accessed via Settings)
+import { CompanyList } from './pages/companies/CompanyList';
+import { CompanyForm } from './pages/companies/CompanyForm';
 
 const App = () => {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Layout />}>
+          {/* Dashboard */}
           <Route index element={<Dashboard />} />
+
+          {/* Customers */}
           <Route path="customers" element={<CustomerList />} />
           <Route path="customers/add" element={<CustomerForm />} />
           <Route path="customers/edit/:id" element={<CustomerForm />} />
+
+          {/* Products */}
+          <Route path="products" element={<ProductList />} />
+          <Route path="products/add" element={<ProductForm />} />
+          <Route path="products/edit/:id" element={<ProductForm />} />
+
+          {/* Settings (Companies accessed through settings) */}
+          <Route path="settings" element={<SettingsPage />} />
+          <Route path="companies" element={<CompanyList />} />
+          <Route path="companies/edit/:id" element={<CompanyForm />} />
         </Route>
       </Routes>
     </BrowserRouter>

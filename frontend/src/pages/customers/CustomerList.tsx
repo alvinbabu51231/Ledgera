@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCustomerStore } from '../../store/customerStore';
-import { Plus, Search, Edit, Trash2 } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Users } from 'lucide-react';
 
 export const CustomerList: React.FC = () => {
   const { customers, loading, error, fetchCustomers, deleteCustomer } = useCustomerStore();
@@ -20,93 +20,128 @@ export const CustomerList: React.FC = () => {
   };
 
   return (
-    <div style={{ backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '24px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h1 style={{ margin: 0, fontSize: '1.5rem', color: '#0f172a' }}>Customers</h1>
-        <Link 
-          to="/customers/add"
-          style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#0284c7', color: 'white', padding: '8px 16px', borderRadius: '6px', textDecoration: 'none', fontWeight: 500 }}
-        >
-          <Plus size={18} />
-          Add Customer
+    <div>
+      {/* Page Header */}
+      <div className="page-header">
+        <div className="page-header-left">
+          <h1>Customers</h1>
+          <p>Manage your customer master records</p>
+        </div>
+        <Link to="/customers/add" className="btn btn-primary">
+          <Plus size={16} />
+          New Customer
         </Link>
       </div>
 
-      <div style={{ marginBottom: '24px', position: 'relative', width: '300px' }}>
-        <div style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}>
-          <Search size={18} />
+      {/* Table Card */}
+      <div className="card">
+        {/* Toolbar */}
+        <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--gray-200)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="search-bar">
+            <Search size={15} className="search-bar-icon" />
+            <input
+              type="text"
+              placeholder="Search name, phone, or GST..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div style={{ marginLeft: 'auto', fontSize: '13px', color: 'var(--gray-400)' }}>
+            {customers.length} {customers.length === 1 ? 'customer' : 'customers'}
+          </div>
         </div>
-        <input
-          type="text"
-          placeholder="Search name, phone, or GST..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{ width: '100%', padding: '10px 10px 10px 36px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.95rem' }}
-        />
-      </div>
 
-      {error && <div style={{ color: '#ef4444', marginBottom: '16px', padding: '12px', backgroundColor: '#fef2f2', borderRadius: '6px' }}>{error}</div>}
+        {/* Error */}
+        {error && (
+          <div className="alert alert-error" style={{ margin: '16px 20px' }}>
+            {error}
+          </div>
+        )}
 
-      {loading && customers.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>Loading customers...</div>
-      ) : customers.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: '#64748b', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
-          No customers found. Click "Add Customer" to create one.
-        </div>
-      ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f1f5f9', borderBottom: '2px solid #e2e8f0' }}>
-                <th style={{ padding: '12px 16px', color: '#475569', fontWeight: 600 }}>Code</th>
-                <th style={{ padding: '12px 16px', color: '#475569', fontWeight: 600 }}>Name</th>
-                <th style={{ padding: '12px 16px', color: '#475569', fontWeight: 600 }}>Phone</th>
-                <th style={{ padding: '12px 16px', color: '#475569', fontWeight: 600 }}>GST Number</th>
-                <th style={{ padding: '12px 16px', color: '#475569', fontWeight: 600, textAlign: 'right' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {customers.map((customer) => (
-                <tr key={customer.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '12px 16px', color: '#64748b' }}>{customer.customer_code}</td>
-                  <td style={{ padding: '12px 16px', fontWeight: 500, color: '#0f172a' }}>{customer.customer_name}</td>
-                  <td style={{ padding: '12px 16px', color: '#334155' }}>{customer.phone_number}</td>
-                  <td style={{ padding: '12px 16px', color: '#334155' }}>{customer.gst_number || '-'}</td>
-                  <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                    <Link to={`/customers/edit/${customer.id}`} style={{ color: '#0284c7', marginRight: '16px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                      <Edit size={16} /> Edit
-                    </Link>
-                    <button 
-                      onClick={() => setDeleteConfirmId(customer.id)}
-                      style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '1rem', padding: 0 }}
-                    >
-                      <Trash2 size={16} /> Delete
-                    </button>
-                  </td>
+        {/* States */}
+        {loading && customers.length === 0 ? (
+          <div className="loading-state">
+            <div>Loading customers…</div>
+          </div>
+        ) : customers.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-state-icon"><Users size={24} /></div>
+            <h3>No customers yet</h3>
+            <p>Get started by adding your first customer record.</p>
+            <Link to="/customers/add" className="btn btn-primary" style={{ marginTop: '4px' }}>
+              <Plus size={16} />
+              Add Customer
+            </Link>
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Name</th>
+                  <th>Phone</th>
+                  <th>GST Number</th>
+                  <th>Billing Address</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </thead>
+              <tbody>
+                {customers.map(customer => (
+                  <tr key={customer.id}>
+                    <td className="col-mono" style={{ color: 'var(--gray-500)' }}>{customer.customer_code}</td>
+                    <td className="col-primary">{customer.customer_name}</td>
+                    <td>{customer.phone_number}</td>
+                    <td>
+                      {customer.gst_number ? (
+                        <span className="col-mono" style={{ fontSize: '12.5px' }}>{customer.gst_number}</span>
+                      ) : (
+                        <span className="col-muted">—</span>
+                      )}
+                    </td>
+                    <td style={{ maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--gray-600)' }}>
+                      {customer.billing_address}
+                    </td>
+                    <td>
+                      <div className="table-actions">
+                        <Link
+                          to={`/customers/edit/${customer.id}`}
+                          className="btn btn-ghost btn-icon-sm"
+                          title="Edit customer"
+                        >
+                          <Pencil size={14} />
+                        </Link>
+                        <button
+                          onClick={() => setDeleteConfirmId(customer.id)}
+                          className="btn btn-ghost btn-icon-sm"
+                          title="Delete customer"
+                          style={{ color: 'var(--gray-400)' }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* Delete Confirmation Modal */}
       {deleteConfirmId && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
-          <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px', width: '400px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
-            <h3 style={{ marginTop: 0, fontSize: '1.25rem', color: '#0f172a' }}>Confirm Deletion</h3>
-            <p style={{ color: '#475569', marginBottom: '24px' }}>Are you sure you want to delete this customer? This action cannot be undone.</p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-              <button 
-                onClick={() => setDeleteConfirmId(null)}
-                style={{ padding: '8px 16px', border: '1px solid #cbd5e1', backgroundColor: 'white', borderRadius: '6px', cursor: 'pointer', fontWeight: 500 }}
-              >
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal-title">Delete Customer?</div>
+            <div className="modal-body">
+              This action cannot be undone. The customer record will be permanently removed from the system.
+            </div>
+            <div className="modal-actions">
+              <button className="btn btn-secondary" onClick={() => setDeleteConfirmId(null)}>
                 Cancel
               </button>
-              <button 
-                onClick={handleDelete}
-                style={{ padding: '8px 16px', border: 'none', backgroundColor: '#ef4444', color: 'white', borderRadius: '6px', cursor: 'pointer', fontWeight: 500 }}
-              >
+              <button className="btn btn-primary" style={{ background: '#dc2626' }} onClick={handleDelete}>
                 Delete
               </button>
             </div>

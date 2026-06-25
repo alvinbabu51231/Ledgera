@@ -21,13 +21,51 @@ export async function initializeDatabase() {
   db = drizzle(client, { schema });
 
   // Ensure tables exist on startup
+  await client.execute(`DROP TABLE IF EXISTS companies`);
   await client.execute(`
     CREATE TABLE IF NOT EXISTS companies (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      company_name TEXT NOT NULL,
+      gst_number TEXT,
+      address TEXT,
+      phone TEXT,
+      email TEXT,
+      bank_name TEXT,
+      account_holder TEXT,
+      account_number TEXT,
+      ifsc_code TEXT,
+      invoice_prefix TEXT NOT NULL DEFAULT 'INV',
+      is_active INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS products (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_code TEXT NOT NULL UNIQUE,
+      product_name TEXT NOT NULL,
+      category TEXT NOT NULL,
+      size TEXT NOT NULL,
+      unit TEXT NOT NULL,
+      selling_price REAL NOT NULL,
+      manufacturing_cost REAL NOT NULL,
+      gst_percentage REAL NOT NULL,
+      hsn_code TEXT,
+      description TEXT,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  const existingCompanies = await client.execute(`SELECT COUNT(*) as count FROM companies`);
+  if (existingCompanies.rows[0].count === 0) {
+    await client.execute(`
+      INSERT INTO companies (company_name, invoice_prefix)
+      VALUES ('Able Plastics', 'AP-'), ('Relative Plastics', 'RP-')
+    `);
+  }
 
   await client.execute(`
     CREATE TABLE IF NOT EXISTS customers (
