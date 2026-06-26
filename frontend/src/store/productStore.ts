@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Product } from '../../../shared/types/product';
 import { productApi } from '../api/productApi';
+import { getErrorMessage } from '../utils/errors';
 
 interface ProductState {
   products: Product[];
@@ -20,8 +21,8 @@ export const useProductStore = create<ProductState>((set) => ({
     try {
       const response = await productApi.getAll(search);
       set({ products: response.data, loading: false });
-    } catch (err: any) {
-      set({ error: err.message || 'Failed to fetch products', loading: false });
+    } catch (err: unknown) {
+      set({ error: getErrorMessage(err, 'Failed to fetch products'), loading: false });
     }
   },
 
@@ -33,8 +34,8 @@ export const useProductStore = create<ProductState>((set) => ({
         products: state.products.filter((p) => p.id !== id),
         loading: false
       }));
-    } catch (err: any) {
-      set({ error: err.message || 'Failed to delete product', loading: false });
+    } catch (err: unknown) {
+      set({ error: getErrorMessage(err, 'Failed to delete product'), loading: false });
     }
   }
 }));

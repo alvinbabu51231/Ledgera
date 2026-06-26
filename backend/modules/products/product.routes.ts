@@ -55,7 +55,7 @@ export default async function productRoutes(fastify: FastifyInstance) {
     const { id } = request.params as { id: string };
     try {
       await productService.deleteProduct(Number(id));
-      return reply.send({ success: true, message: 'Product deleted successfully' });
+      return reply.send({ success: true, message: 'Product archived successfully' });
     } catch (error: any) {
       return reply.status(400).send({ success: false, message: error.message });
     }

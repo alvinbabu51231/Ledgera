@@ -12,6 +12,7 @@ export const products = sqliteTable('products', {
   gst_percentage: real('gst_percentage').notNull(),
   hsn_code: text('hsn_code'),
   description: text('description'),
+  is_active: integer('is_active', { mode: 'boolean' }).default(true).notNull(),
   created_at: text('created_at').default('CURRENT_TIMESTAMP').notNull(),
   updated_at: text('updated_at').default('CURRENT_TIMESTAMP').notNull(),
 });

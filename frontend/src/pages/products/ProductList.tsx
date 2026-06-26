@@ -160,9 +160,9 @@ export const ProductList: React.FC = () => {
       {deleteConfirmId && (
         <div className="modal-overlay">
           <div className="modal">
-            <div className="modal-title">Delete Product?</div>
+            <div className="modal-title">Archive Product?</div>
             <div className="modal-body">
-              This product will be permanently removed. If this product has been used in orders, deletion may fail.
+              This product will be hidden from active product lists while preserving its history.
             </div>
             <div className="modal-actions">
               <button className="btn btn-secondary" onClick={() => setDeleteConfirmId(null)}>
@@ -173,7 +173,7 @@ export const ProductList: React.FC = () => {
                 style={{ background: '#dc2626' }}
                 onClick={handleDelete}
               >
-                Delete
+                Archive
               </button>
             </div>
           </div>

@@ -133,16 +133,16 @@ export const CustomerList: React.FC = () => {
       {deleteConfirmId && (
         <div className="modal-overlay">
           <div className="modal">
-            <div className="modal-title">Delete Customer?</div>
+            <div className="modal-title">Archive Customer?</div>
             <div className="modal-body">
-              This action cannot be undone. The customer record will be permanently removed from the system.
+              This customer will be hidden from active customer lists while preserving its history.
             </div>
             <div className="modal-actions">
               <button className="btn btn-secondary" onClick={() => setDeleteConfirmId(null)}>
                 Cancel
               </button>
               <button className="btn btn-primary" style={{ background: '#dc2626' }} onClick={handleDelete}>
-                Delete
+                Archive
               </button>
             </div>
           </div>

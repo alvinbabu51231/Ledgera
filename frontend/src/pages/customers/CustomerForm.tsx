@@ -4,6 +4,7 @@ import { createCustomerSchema, updateCustomerSchema } from '../../../../shared/t
 import { customerApi } from '../../api/customerApi';
 import { ZodError } from 'zod';
 import { ArrowLeft, Save } from 'lucide-react';
+import { getErrorMessage } from '../../utils/errors';
 
 export const CustomerForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -75,7 +76,7 @@ export const CustomerForm: React.FC = () => {
         await customerApi.create(payload);
       }
       navigate('/customers');
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err instanceof ZodError) {
         const fieldErrors: Record<string, string> = {};
         err.errors.forEach(e => {
@@ -83,7 +84,7 @@ export const CustomerForm: React.FC = () => {
         });
         setErrors(fieldErrors);
       } else {
-        setGlobalError(err.message || 'An error occurred during submission.');
+        setGlobalError(getErrorMessage(err, 'An error occurred during submission.'));
       }
       setLoading(false);
     }

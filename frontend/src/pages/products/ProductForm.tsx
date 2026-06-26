@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import { productApi } from '../../api/productApi';
 import { CreateProductInput, UpdateProductInput } from '../../../../shared/types/product';
 import { ArrowLeft, Save } from 'lucide-react';
+import { getErrorMessage } from '../../utils/errors';
 
 export const ProductForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -35,7 +36,7 @@ export const ProductForm: React.FC = () => {
             product_name: res.data.product_name,
             category: res.data.category,
             size: res.data.size,
-            unit: res.data.unit as any,
+            unit: res.data.unit as CreateProductInput['unit'],
             selling_price: res.data.selling_price,
             manufacturing_cost: res.data.manufacturing_cost,
             gst_percentage: res.data.gst_percentage,
@@ -44,20 +45,32 @@ export const ProductForm: React.FC = () => {
           });
           setLoading(false);
         })
-        .catch(err => {
-          setError(err.response?.data?.message || 'Failed to load product');
+        .catch((err: unknown) => {
+          setError(getErrorMessage(err, 'Failed to load product'));
           setLoading(false);
         });
     }
   }, [id, isEdit]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     const { name, value, type } = e.target;
-    let parsedValue: string | number = value;
-    if (type === 'number') parsedValue = value === '' ? 0 : Number(value);
-    setFormData(prev => ({ ...prev, [name]: parsedValue }));
-  };
 
+    let parsedValue: string | number = value;
+
+    if (
+      type === 'number' ||
+      name === 'gst_percentage'
+    ) {
+      parsedValue = value === '' ? 0 : Number(value);
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      [name]: parsedValue,
+    }));
+  };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -69,8 +82,8 @@ export const ProductForm: React.FC = () => {
         await productApi.create(formData);
       }
       navigate('/products');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to save product');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Failed to save product'));
       setLoading(false);
     }
   };

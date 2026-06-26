@@ -55,7 +55,7 @@ export default async function customerRoutes(fastify: FastifyInstance) {
     const { id } = request.params as { id: string };
     try {
       await customerService.deleteCustomer(Number(id));
-      return reply.send({ success: true, message: 'Customer deleted successfully' });
+      return reply.send({ success: true, message: 'Customer archived successfully' });
     } catch (error: any) {
       return reply.status(400).send({ success: false, message: error.message });
     }

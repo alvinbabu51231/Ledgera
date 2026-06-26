@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -10,11 +10,13 @@ import {
   BarChart3,
   Settings,
   Building2,
+  Check,
   ChevronDown,
   Bell,
   HelpCircle,
   Layers
 } from 'lucide-react';
+import { useCompanyStore } from '../store/companyStore';
 
 // --- Nav Items ---
 const primaryNavItems = [
@@ -30,12 +32,22 @@ const transactionNavItems = [
   { name: 'Reports',    path: '/reports',    icon: <BarChart3 size={16} />,    soon: true },
 ];
 
-const COMPANIES = ['Able Plastics', 'Relative Plastics'];
-
 export const Layout: React.FC = () => {
   const location = useLocation();
-  const [selectedCompany, setSelectedCompany] = useState(COMPANIES[0]);
   const [showCompanyMenu, setShowCompanyMenu] = useState(false);
+  const {
+    companies,
+    selectedCompany,
+    selectedCompanyId,
+    fetchCompanies,
+    setSelectedCompanyId
+  } = useCompanyStore();
+
+  useEffect(() => {
+    if (companies.length === 0) {
+      fetchCompanies();
+    }
+  }, [companies.length, fetchCompanies]);
 
   const getPageTitle = () => {
     const all = [...primaryNavItems, ...transactionNavItems];
@@ -121,7 +133,7 @@ export const Layout: React.FC = () => {
               onClick={() => setShowCompanyMenu(v => !v)}
             >
               <Building2 size={14} style={{ color: 'var(--primary-600)' }} />
-              <span>{selectedCompany}</span>
+              <span>{selectedCompany?.company_name ?? 'Select Company'}</span>
               <ChevronDown size={13} style={{ opacity: 0.6 }} />
             </button>
 
@@ -154,31 +166,31 @@ export const Layout: React.FC = () => {
                   }}>
                     Switch Company
                   </div>
-                  {COMPANIES.map(co => (
+                  {companies.map(company => (
                     <button
-                      key={co}
-                      onClick={() => { setSelectedCompany(co); setShowCompanyMenu(false); }}
+                      key={company.id}
+                      onClick={() => { setSelectedCompanyId(company.id); setShowCompanyMenu(false); }}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: '10px',
                         width: '100%',
                         padding: '8px 10px',
-                        background: selectedCompany === co ? 'var(--primary-50)' : 'transparent',
-                        color: selectedCompany === co ? 'var(--primary-600)' : 'var(--gray-700)',
+                        background: selectedCompanyId === company.id ? 'var(--primary-50)' : 'transparent',
+                        color: selectedCompanyId === company.id ? 'var(--primary-600)' : 'var(--gray-700)',
                         border: 'none',
                         borderRadius: 'var(--radius-md)',
                         cursor: 'pointer',
                         fontSize: '13.5px',
-                        fontWeight: selectedCompany === co ? 600 : 400,
+                        fontWeight: selectedCompanyId === company.id ? 600 : 400,
                         textAlign: 'left',
                         fontFamily: 'var(--font-family)',
                       }}
                     >
                       <Layers size={14} />
-                      {co}
-                      {selectedCompany === co && (
-                        <span style={{ marginLeft: 'auto', fontSize: '11px', color: 'var(--primary-600)' }}>✓</span>
+                      {company.company_name}
+                      {selectedCompanyId === company.id && (
+                        <Check size={13} style={{ marginLeft: 'auto', color: 'var(--primary-600)' }} />
                       )}
                     </button>
                   ))}

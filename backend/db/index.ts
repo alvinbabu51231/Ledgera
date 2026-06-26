@@ -20,8 +20,7 @@ export async function initializeDatabase() {
 
   db = drizzle(client, { schema });
 
-  // Ensure tables exist on startup
-  await client.execute(`DROP TABLE IF EXISTS companies`);
+  // Ensure tables exist on startup without dropping user data.
   await client.execute(`
     CREATE TABLE IF NOT EXISTS companies (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -54,10 +53,17 @@ export async function initializeDatabase() {
       gst_percentage REAL NOT NULL,
       hsn_code TEXT,
       description TEXT,
+      is_active INTEGER NOT NULL DEFAULT 1,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  const productColumns = await client.execute(`PRAGMA table_info(products)`);
+  const hasProductIsActive = productColumns.rows.some((row) => row.name === 'is_active');
+  if (!hasProductIsActive) {
+    await client.execute(`ALTER TABLE products ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1`);
+  }
 
   const existingCompanies = await client.execute(`SELECT COUNT(*) as count FROM companies`);
   if (existingCompanies.rows[0].count === 0) {

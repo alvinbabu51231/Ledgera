@@ -47,6 +47,6 @@ export const productService = {
     if (!existing) {
       throw new Error('Product not found');
     }
-    await productRepository.delete(id);
+    await productRepository.softDelete(id);
   }
 };

@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import { companyApi } from '../../api/companyApi';
 import { UpdateCompanyInput } from '../../../../shared/types/company';
 import { ArrowLeft, Save } from 'lucide-react';
+import { getErrorMessage } from '../../utils/errors';
 
 export const CompanyForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -43,8 +44,8 @@ export const CompanyForm: React.FC = () => {
           });
           setLoading(false);
         })
-        .catch(err => {
-          setError(err.response?.data?.message || 'Failed to load company');
+        .catch((err: unknown) => {
+          setError(getErrorMessage(err, 'Failed to load company'));
           setLoading(false);
         });
     }
@@ -62,8 +63,8 @@ export const CompanyForm: React.FC = () => {
     try {
       if (id) await companyApi.update(Number(id), formData);
       navigate('/settings');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to save company');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Failed to save company'));
       setLoading(false);
     }
   };

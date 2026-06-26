@@ -13,7 +13,9 @@ export const createProductSchema = z.object({
   description: z.string().optional().nullable(),
 });
 
-export const updateProductSchema = createProductSchema.partial();
+export const updateProductSchema = createProductSchema.partial().extend({
+  is_active: z.boolean().optional(),
+});
 
 export type CreateProductInput = z.infer<typeof createProductSchema>;
 export type UpdateProductInput = z.infer<typeof updateProductSchema>;
@@ -30,6 +32,7 @@ export interface Product {
   gst_percentage: number;
   hsn_code: string | null;
   description: string | null;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
 }
