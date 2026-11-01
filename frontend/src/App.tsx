@@ -1,16 +1,16 @@
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
 
 // Pages
 import { Dashboard } from './pages/Dashboard';
 import { SettingsPage } from './pages/Settings';
 
-// Customers
+// Customers & Parties (Master-Detail)
 import { CustomerList } from './pages/customers/CustomerList';
 import { CustomerForm } from './pages/customers/CustomerForm';
 import { CustomerDetail } from './pages/customers/CustomerDetail';
 
-// Products
+// Products & Items (Master-Detail)
 import { ProductList } from './pages/products/ProductList';
 import { ProductForm } from './pages/products/ProductForm';
 
@@ -18,13 +18,18 @@ import { ProductForm } from './pages/products/ProductForm';
 import { CompanyList } from './pages/companies/CompanyList';
 import { CompanyForm } from './pages/companies/CompanyForm';
 
-// Invoices
+// Invoices & Sales
 import { InvoiceList } from './pages/invoices/InvoiceList';
 import { InvoiceForm } from './pages/invoices/InvoiceForm';
 import { InvoiceView } from './pages/invoices/InvoiceView';
-// Expenses
+
+// Purchases & Expenses
+import { PurchaseList } from './pages/purchases/PurchaseList';
 import { ExpenseList } from './pages/expenses/ExpenseList';
 import { ExpenseForm } from './pages/expenses/ExpenseForm';
+
+// Cash & Bank
+import { CashBank } from './pages/cashbank/CashBank';
 
 // Import
 import { ImportData } from './pages/import/ImportData';
@@ -37,41 +42,51 @@ const App = () => {
     <HashRouter>
       <Routes>
         <Route path="/" element={<Layout />}>
-          {/* Dashboard */}
+          {/* Dashboard (Home) */}
           <Route index element={<Dashboard />} />
 
-          {/* Customers */}
+          {/* Parties / Customers */}
+          <Route path="parties" element={<CustomerList />} />
           <Route path="customers" element={<CustomerList />} />
           <Route path="customers/add" element={<CustomerForm />} />
           <Route path="customers/edit/:id" element={<CustomerForm />} />
           <Route path="customers/view/:id" element={<CustomerDetail />} />
 
-          {/* Products */}
+          {/* Items / Products */}
+          <Route path="items" element={<ProductList />} />
           <Route path="products" element={<ProductList />} />
           <Route path="products/add" element={<ProductForm />} />
           <Route path="products/edit/:id" element={<ProductForm />} />
 
-          {/* Settings (Companies accessed through settings) */}
+          {/* Settings & Companies */}
           <Route path="settings" element={<SettingsPage />} />
           <Route path="companies" element={<CompanyList />} />
           <Route path="companies/edit/:id" element={<CompanyForm />} />
 
-          {/* Invoices */}
+          {/* Sale Invoices */}
           <Route path="invoices" element={<InvoiceList />} />
           <Route path="invoices/new" element={<InvoiceForm />} />
           <Route path="invoices/edit/:id" element={<InvoiceForm />} />
           <Route path="invoices/view/:id" element={<InvoiceView />} />
 
-          {/* Expenses */}
+          {/* Purchase Bills & Expenses */}
+          <Route path="purchases" element={<PurchaseList />} />
           <Route path="expenses" element={<ExpenseList />} />
           <Route path="expenses/new" element={<ExpenseForm />} />
           <Route path="expenses/edit/:id" element={<ExpenseForm />} />
 
-          {/* Import */}
+          {/* Cash & Bank */}
+          <Route path="cash-bank" element={<CashBank />} />
+
+          {/* Import & Utilities */}
           <Route path="import" element={<ImportData />} />
+          <Route path="utilities" element={<ImportData />} />
 
           {/* Reports */}
           <Route path="reports" element={<Reports />} />
+
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
     </HashRouter>

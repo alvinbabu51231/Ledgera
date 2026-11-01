@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Building2,
   CalendarDays,
@@ -8,20 +9,33 @@ import {
   Info,
   ChevronRight,
   Save,
-  Upload
+  Upload,
+  Check,
+  Pencil,
+  Plus,
+  Sliders,
+  DollarSign,
+  Shield,
+  Layers,
+  HelpCircle
 } from 'lucide-react';
 import { UpdateCompanyInput } from '../../../shared/types/company';
 import { useCompanyStore } from '../store/companyStore';
 import { getErrorMessage } from '../utils/errors';
 
 const settingsTabs = [
-  { name: 'Business Information', path: '/settings/business', icon: <Building2 size={15} /> },
-  { name: 'Financial Year', path: '/settings/fiscal', icon: <CalendarDays size={15} /> },
-  { name: 'GST Settings', path: '/settings/gst', icon: <Percent size={15} /> },
-  { name: 'Invoice Settings', path: '/settings/invoice', icon: <Receipt size={15} /> },
-  { name: 'Backup & Restore', path: '/settings/backup', icon: <Database size={15} /> },
-  { name: 'Import Data', path: '/settings/import', icon: <Upload size={15} /> },
-  { name: 'About Ledgera', path: '/settings/about', icon: <Info size={15} /> },
+  { id: 'general', name: 'GENERAL' },
+  { id: 'business', name: 'BUSINESS INFORMATION' },
+  { id: 'transaction', name: 'TRANSACTION' },
+  { id: 'print', name: 'PRINT' },
+  { id: 'taxes', name: 'TAXES & GST' },
+  { id: 'message', name: 'TRANSACTION MESSAGE' },
+  { id: 'party', name: 'PARTY' },
+  { id: 'item', name: 'ITEM' },
+  { id: 'reminders', name: 'SERVICE REMINDERS' },
+  { id: 'accounting', name: 'ACCOUNTING' },
+  { id: 'currency', name: 'MULTI CURRENCY' },
+  { id: 'about', name: 'ABOUT LEDGERA' },
 ];
 
 const emptyCompanyDraft: UpdateCompanyInput = {
@@ -63,60 +77,50 @@ const normalizeCompanyDraft = (draft: UpdateCompanyInput): UpdateCompanyInput =>
   invoice_prefix: draft.invoice_prefix?.trim() ?? '',
 });
 
-const AboutPanel: React.FC = () => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-    <div>
-      <div style={{ fontSize: '28px', fontWeight: 700, letterSpacing: '2px', color: 'var(--gray-900)' }}>
-        LEDGER<span style={{ color: 'var(--primary-600)' }}>A</span>
-      </div>
-      <div style={{ fontSize: '13px', color: 'var(--gray-500)', marginTop: '4px' }}>
-        Run Your Business Smarter
-      </div>
-    </div>
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-      {[
-        { label: 'Version', value: '1.0.0' },
-        { label: 'Build', value: 'Phase 4' },
-        { label: 'Platform', value: 'Electron + React' },
-        { label: 'Database', value: 'SQLite (Local)' },
-      ].map(row => (
-        <div key={row.label} style={{ padding: '14px', background: 'var(--gray-50)', borderRadius: 'var(--radius-md)', border: '1px solid var(--gray-200)' }}>
-          <div style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--gray-400)', marginBottom: '4px' }}>{row.label}</div>
-          <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--gray-800)' }}>{row.value}</div>
-        </div>
-      ))}
-    </div>
-    <div style={{ padding: '14px', background: 'var(--primary-50)', borderRadius: 'var(--radius-md)', border: '1px solid var(--primary-100)', fontSize: '13px', color: 'var(--primary-600)' }}>
-      Built for Able Plastics and Relative Plastics. All data is stored locally on this device.
-    </div>
-  </div>
-);
+export const SettingsPage: React.FC = () => {
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTabId = searchParams.get('tab') || 'general';
 
-const PlaceholderPanel: React.FC<{ name: string }> = ({ name }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 24px', gap: '12px', textAlign: 'center' }}>
-    <div style={{ width: '52px', height: '52px', borderRadius: 'var(--radius-lg)', background: 'var(--gray-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gray-300)' }}>
-      <Info size={24} />
-    </div>
-    <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--gray-600)' }}>{name}</div>
-    <div style={{ fontSize: '13px', color: 'var(--gray-400)' }}>This section will be available in a future update.</div>
-  </div>
-);
+  const {
+    companies,
+    selectedCompanyId,
+    setSelectedCompanyId,
+    loading,
+    error,
+    fetchCompanies,
+    updateCompany
+  } = useCompanyStore();
 
-const ImportDataPanel: React.FC = () => (
-  <div style={{ padding: '24px 0' }}>
-    <div className="card card-padded" style={{ boxShadow: 'none' }}>
-      <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--gray-800)' }}>EqSoft Import (Coming Soon)</div>
-      <div style={{ fontSize: '13px', color: 'var(--gray-500)', marginTop: '6px' }}>The importer is intentionally not enabled in this release.</div>
-    </div>
-  </div>
-);
-
-const BusinessInformationPanel: React.FC = () => {
-  const { companies, loading, error, fetchCompanies, updateCompany } = useCompanyStore();
   const [drafts, setDrafts] = useState<Record<number, UpdateCompanyInput>>({});
   const [savingId, setSavingId] = useState<number | null>(null);
   const [savedId, setSavedId] = useState<number | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // General Settings Checkbox States (matching Screenshot 212516)
+  const [passcodeEnabled, setPasscodeEnabled] = useState(false);
+  const [currencySymbol, setCurrencySymbol] = useState('₹');
+  const [decimalPlaces, setDecimalPlaces] = useState(2);
+  const [gstinEnabled, setGstinEnabled] = useState(true);
+  const [stopSaleNegative, setStopSaleNegative] = useState(false);
+  const [blockNewItems, setBlockNewItems] = useState(false);
+  const [blockNewParties, setBlockNewParties] = useState(false);
+
+  // More Transactions States
+  const [txnEstimate, setTxnEstimate] = useState(true);
+  const [txnProforma, setTxnProforma] = useState(true);
+  const [txnSaleOrder, setTxnSaleOrder] = useState(true);
+  const [txnOtherIncome, setTxnOtherIncome] = useState(false);
+  const [txnFixedAssets, setTxnFixedAssets] = useState(false);
+  const [txnDeliveryChallan, setTxnDeliveryChallan] = useState(true);
+  const [txnGoodsReturn, setTxnGoodsReturn] = useState(true);
+
+  // Backup & Audit States
+  const [autoBackup, setAutoBackup] = useState(false);
+  const [auditTrail, setAuditTrail] = useState(true);
+
+  // Zoom / Scale State
+  const [zoomScale, setZoomScale] = useState(100);
 
   useEffect(() => {
     if (companies.length === 0) {
@@ -158,216 +162,579 @@ const BusinessInformationPanel: React.FC = () => {
     }
   };
 
-  if (loading && companies.length === 0) {
-    return <div className="loading-state" style={{ minHeight: '260px' }}>Loading business information...</div>;
-  }
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {(error || formError) && (
-        <div className="alert alert-error">
-          {formError || error}
+    <div style={{ display: 'flex', height: '100%', background: '#ffffff', overflow: 'hidden' }}>
+      {/* ── Left Vertical Navigation matching Screenshot 212516 ── */}
+      <aside style={{
+        width: '210px',
+        minWidth: '210px',
+        borderRight: '1px solid #e2e8f0',
+        background: '#13182c',
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '12px 0'
+      }}>
+        <div style={{ padding: '0 16px 12px', borderBottom: '1px solid #232840', color: '#ffffff', fontSize: '16px', fontWeight: 700 }}>
+          Settings
         </div>
-      )}
 
-      {companies.map(company => {
-        const draft = drafts[company.id] ?? toCompanyDraft(company);
-        return (
-          <div key={company.id} className="card card-padded" style={{ boxShadow: 'none' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '18px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: 'var(--radius-md)',
-                  background: 'var(--primary-50)',
-                  border: '1px solid var(--primary-100)',
-                  color: 'var(--primary-600)',
+        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
+          {settingsTabs.map(tab => {
+            const isActive = activeTabId === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setSearchParams({ tab: tab.id })}
+                style={{
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}>
-                  <Building2 size={18} />
-                </div>
-                <div>
-                  <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--gray-900)' }}>{company.company_name}</div>
-                  <div style={{ fontSize: '12.5px', color: 'var(--gray-500)' }}>Business profile and invoice footer details</div>
-                </div>
-              </div>
-              <button
-                type="button"
-                className="btn btn-primary"
-                disabled={savingId === company.id}
-                onClick={() => saveCompany(company.id)}
+                  justifyContent: 'space-between',
+                  width: '100%',
+                  padding: '10px 16px',
+                  background: isActive ? 'rgba(255,255,255,0.1)' : 'transparent',
+                  color: isActive ? '#ffffff' : '#9aa1bc',
+                  border: 'none',
+                  borderLeft: isActive ? '3px solid #e43b3b' : '3px solid transparent',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: isActive ? 700 : 500,
+                  letterSpacing: '0.6px',
+                  textAlign: 'left',
+                  transition: 'all 0.15s'
+                }}
               >
-                <Save size={15} />
-                {savingId === company.id ? 'Saving...' : savedId === company.id ? 'Saved' : 'Save'}
+                <span>{tab.name}</span>
               </button>
+            );
+          })}
+        </div>
+      </aside>
+
+      {/* ── Right Content Area ── */}
+      <main style={{ flex: 1, overflowY: 'auto', padding: '24px 32px', background: '#f8fafc' }}>
+        {/* TAB 1: GENERAL (Exact Layout from Screenshot 212516) */}
+        {activeTabId === 'general' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', maxWidth: '1080px' }}>
+            {/* Row 1: Application, Multi Firm, Backup & History */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '24px' }}>
+              {/* Box 1: Application */}
+              <div className="card" style={{ padding: '20px', borderRadius: '12px' }}>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', marginBottom: '16px' }}>
+                  Application
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '13px', color: '#334155' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={passcodeEnabled}
+                      onChange={e => setPasscodeEnabled(e.target.checked)}
+                    />
+                    <span>Enable Passcode</span>
+                  </label>
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span>Business Currency</span>
+                    <select
+                      value={currencySymbol}
+                      onChange={e => setCurrencySymbol(e.target.value)}
+                      style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                    >
+                      <option value="₹">₹ (INR)</option>
+                      <option value="$">$ (USD)</option>
+                      <option value="€">€ (EUR)</option>
+                    </select>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div>
+                      <div>Amount</div>
+                      <div style={{ fontSize: '11px', color: '#94a3b8' }}>(upto Decimal Places)</div>
+                    </div>
+                    <input
+                      type="number"
+                      min={0}
+                      max={4}
+                      value={decimalPlaces}
+                      onChange={e => setDecimalPlaces(Number(e.target.value))}
+                      style={{ width: '50px', padding: '4px', textAlign: 'center', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                    />
+                  </div>
+
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={gstinEnabled}
+                      onChange={e => setGstinEnabled(e.target.checked)}
+                    />
+                    <span>GSTIN Number</span>
+                  </label>
+
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={stopSaleNegative}
+                      onChange={e => setStopSaleNegative(e.target.checked)}
+                    />
+                    <span>Stop Sale on Negative Stock</span>
+                  </label>
+
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={blockNewItems}
+                      onChange={e => setBlockNewItems(e.target.checked)}
+                    />
+                    <span>Block New Items from Txn Form</span>
+                  </label>
+
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={blockNewParties}
+                      onChange={e => setBlockNewParties(e.target.checked)}
+                    />
+                    <span>Block New Parties from Txn Form</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Box 2: Multi Firm (Company Management) */}
+              <div className="card" style={{ padding: '20px', borderRadius: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, fontSize: '14px', color: '#1e293b', cursor: 'pointer' }}>
+                    <input type="checkbox" defaultChecked />
+                    <span>Multi Firm</span>
+                  </label>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {companies.map(c => {
+                    const isSelected = selectedCompanyId === c.id;
+                    return (
+                      <div
+                        key={c.id}
+                        onClick={() => setSelectedCompanyId(c.id)}
+                        style={{
+                          padding: '12px 14px',
+                          border: isSelected ? '2px solid #2563eb' : '1px solid #e2e8f0',
+                          borderRadius: '8px',
+                          background: isSelected ? '#eff6ff' : '#ffffff',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <input
+                            type="radio"
+                            checked={isSelected}
+                            onChange={() => setSelectedCompanyId(c.id)}
+                          />
+                          <span style={{ fontSize: '13px', fontWeight: 600, color: '#1e293b' }}>
+                            {c.company_name}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontSize: '10px', fontWeight: 700, color: '#64748b', background: '#f1f5f9', padding: '1px 5px', borderRadius: '4px' }}>
+                            DEFAULT
+                          </span>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setSearchParams({ tab: 'business' }); }}
+                            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#2563eb' }}
+                            title="Edit Business Details"
+                          >
+                            <Pencil size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  <button
+                    onClick={() => setSearchParams({ tab: 'business' })}
+                    style={{
+                      marginTop: '6px',
+                      padding: '8px',
+                      background: '#ffffff',
+                      border: '1px dashed #cbd5e1',
+                      borderRadius: '8px',
+                      color: '#2563eb',
+                      fontSize: '12.5px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <Plus size={14} />
+                    <span>Manage Business Details</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Box 3: Backup & History */}
+              <div className="card" style={{ padding: '20px', borderRadius: '12px' }}>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', marginBottom: '16px' }}>
+                  Backup & History
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '13px', color: '#334155' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={autoBackup}
+                      onChange={e => setAutoBackup(e.target.checked)}
+                    />
+                    <span>Auto Backup</span>
+                  </label>
+
+                  <div style={{ fontSize: '12px', color: '#64748b' }}>
+                    Last Backup: <strong>{new Date().toLocaleDateString('en-IN')} | 09:11 PM</strong>
+                  </div>
+
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={auditTrail}
+                      onChange={e => setAuditTrail(e.target.checked)}
+                    />
+                    <span>Audit Trail (Enabled)</span>
+                  </label>
+                </div>
+              </div>
             </div>
 
-            <div className="form-grid-2">
-              <div className="form-group">
-                <label className="form-label">Company Name <span className="required">*</span></label>
-                <input
-                  required
-                  className="form-input"
-                  value={draft.company_name ?? ''}
-                  onChange={event => updateDraft(company.id, 'company_name', event.target.value)}
-                />
+            {/* Row 2: More Transactions, Stock Transfer, Customize Your View */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '24px' }}>
+              {/* Box 4: More Transactions */}
+              <div className="card" style={{ padding: '20px', borderRadius: '12px' }}>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', marginBottom: '16px' }}>
+                  More Transactions
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '13px', color: '#334155' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={txnEstimate}
+                      onChange={e => setTxnEstimate(e.target.checked)}
+                    />
+                    <span>Estimate/Quotation</span>
+                  </label>
+
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={txnProforma}
+                      onChange={e => setTxnProforma(e.target.checked)}
+                    />
+                    <span>Proforma Invoice</span>
+                  </label>
+
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={txnSaleOrder}
+                      onChange={e => setTxnSaleOrder(e.target.checked)}
+                    />
+                    <span>Sale/Purchase Order</span>
+                  </label>
+
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={txnOtherIncome}
+                      onChange={e => setTxnOtherIncome(e.target.checked)}
+                    />
+                    <span>Other Income</span>
+                  </label>
+
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={txnFixedAssets}
+                      onChange={e => setTxnFixedAssets(e.target.checked)}
+                    />
+                    <span>Fixed Assets (FA)</span>
+                  </label>
+
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={txnDeliveryChallan}
+                      onChange={e => setTxnDeliveryChallan(e.target.checked)}
+                    />
+                    <span>Delivery Challan</span>
+                  </label>
+
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={txnGoodsReturn}
+                      onChange={e => setTxnGoodsReturn(e.target.checked)}
+                    />
+                    <span>Goods return on Delivery Challan</span>
+                  </label>
+                </div>
               </div>
 
-              <div className="form-group">
-                <label className="form-label">GST Number</label>
-                <input
-                  className="form-input"
-                  value={draft.gst_number ?? ''}
-                  onChange={event => updateDraft(company.id, 'gst_number', event.target.value)}
-                  style={{ fontFamily: 'monospace', letterSpacing: '0.5px' }}
-                />
+              {/* Box 5: Stock Transfer Between Godowns */}
+              <div className="card" style={{ padding: '20px', borderRadius: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: 700, color: '#1e293b', marginBottom: '12px' }}>
+                  <span>Stock Transfer Between Godowns</span>
+                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444' }} />
+                </div>
+
+                <p style={{ fontSize: '12.5px', color: '#64748b', lineHeight: '1.5', marginBottom: '16px' }}>
+                  Manage all your stores/godowns and transfer stock seamlessly between them. Using this feature, you can transfer stock between stores/godowns and manage your inventory more efficiently.
+                </p>
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#334155', cursor: 'pointer' }}>
+                  <input type="checkbox" />
+                  <span>Godown management & Stock transfer</span>
+                </label>
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Phone</label>
-                <input
-                  className="form-input"
-                  value={draft.phone ?? ''}
-                  onChange={event => updateDraft(company.id, 'phone', event.target.value)}
-                />
-              </div>
+              {/* Box 6: Customize Your View */}
+              <div className="card" style={{ padding: '20px', borderRadius: '12px' }}>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', marginBottom: '12px' }}>
+                  Customize Your View
+                </div>
 
-              <div className="form-group">
-                <label className="form-label">Email</label>
-                <input
-                  type="email"
-                  className="form-input"
-                  value={draft.email ?? ''}
-                  onChange={event => updateDraft(company.id, 'email', event.target.value)}
-                />
-              </div>
+                <div style={{ fontSize: '12.5px', color: '#64748b', marginBottom: '16px' }}>
+                  Choose Your Screen Zoom/Scale:
+                  <div style={{ fontSize: '11.5px', color: '#94a3b8', marginTop: '2px' }}>
+                    Resize the Ledgera screen, making it larger or smaller to fit your preferences.
+                  </div>
+                </div>
 
-              <div className="form-group" style={{ gridColumn: 'span 2' }}>
-                <label className="form-label">Address</label>
-                <textarea
-                  className="form-textarea"
-                  value={draft.address ?? ''}
-                  onChange={event => updateDraft(company.id, 'address', event.target.value)}
-                  rows={3}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Invoice Prefix <span className="required">*</span></label>
                 <input
-                  required
-                  className="form-input"
-                  value={draft.invoice_prefix ?? ''}
-                  onChange={event => updateDraft(company.id, 'invoice_prefix', event.target.value)}
-                  style={{ fontFamily: 'monospace', letterSpacing: '0.5px' }}
+                  type="range"
+                  min="70"
+                  max="130"
+                  step="5"
+                  value={zoomScale}
+                  onChange={e => setZoomScale(Number(e.target.value))}
+                  style={{ width: '100%', marginBottom: '8px' }}
                 />
-              </div>
 
-              <div className="form-group">
-                <label className="form-label">Bank Name</label>
-                <input
-                  className="form-input"
-                  value={draft.bank_name ?? ''}
-                  onChange={event => updateDraft(company.id, 'bank_name', event.target.value)}
-                />
-              </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#94a3b8', marginBottom: '16px' }}>
+                  <span>70%</span>
+                  <span>100%</span>
+                  <span>130%</span>
+                </div>
 
-              <div className="form-group">
-                <label className="form-label">Account Holder</label>
-                <input
-                  className="form-input"
-                  value={draft.account_holder ?? ''}
-                  onChange={event => updateDraft(company.id, 'account_holder', event.target.value)}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Account Number</label>
-                <input
-                  className="form-input"
-                  value={draft.account_number ?? ''}
-                  onChange={event => updateDraft(company.id, 'account_number', event.target.value)}
-                  style={{ fontFamily: 'monospace', letterSpacing: '0.5px' }}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">IFSC Code</label>
-                <input
-                  className="form-input"
-                  value={draft.ifsc_code ?? ''}
-                  onChange={event => updateDraft(company.id, 'ifsc_code', event.target.value)}
-                  style={{ fontFamily: 'monospace', letterSpacing: '0.5px' }}
-                />
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>{zoomScale}%</span>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => alert(`View scale set to ${zoomScale}%`)}
+                    style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe' }}
+                  >
+                    Apply
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        );
-      })}
-    </div>
-  );
-};
+        )}
 
-export const SettingsPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('/settings/business');
+        {/* TAB 2: BUSINESS INFORMATION (Company Management) */}
+        {activeTabId === 'business' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '880px' }}>
+            <div>
+              <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a' }}>Business Information</h2>
+              <p style={{ fontSize: '13px', color: '#64748b' }}>
+                Configure company legal credentials, bank account, and invoice prefixes.
+              </p>
+            </div>
 
-  const activeItem = settingsTabs.find(tab => tab.path === activeTab) ?? settingsTabs[0];
+            {formError && (
+              <div className="alert alert-error">
+                {formError}
+              </div>
+            )}
 
-  return (
-    <div>
-      <div className="page-header">
-        <div className="page-header-left">
-          <h1>Settings</h1>
-          <p>Manage your business configuration and preferences</p>
-        </div>
-      </div>
+            {companies.map(company => {
+              const draft = drafts[company.id] ?? toCompanyDraft(company);
+              return (
+                <div key={company.id} className="card" style={{ padding: '24px', borderRadius: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '10px',
+                        background: '#eff6ff',
+                        color: '#2563eb',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <Building2 size={20} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>{company.company_name}</div>
+                        <div style={{ fontSize: '12.5px', color: '#64748b' }}>Prefix: {company.invoice_prefix}</div>
+                      </div>
+                    </div>
 
-      <div className="card" style={{ display: 'flex', overflow: 'hidden', minHeight: '480px' }}>
-        <div style={{ width: '220px', borderRight: '1px solid var(--gray-200)', padding: '8px', flexShrink: 0, background: 'var(--gray-50)' }}>
-          {settingsTabs.map(tab => (
-            <button
-              key={tab.path}
-              onClick={() => setActiveTab(tab.path)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                width: '100%',
-                padding: '9px 12px',
-                borderRadius: 'var(--radius-md)',
-                fontSize: '13.5px',
-                fontWeight: activeTab === tab.path ? 500 : 400,
-                color: activeTab === tab.path ? 'var(--primary-600)' : 'var(--gray-600)',
-                background: activeTab === tab.path ? 'var(--primary-50)' : 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                textAlign: 'left',
-                fontFamily: 'var(--font-family)',
-                transition: 'all var(--transition-fast)',
-                marginBottom: '1px',
-              }}
-            >
-              <span style={{ opacity: activeTab === tab.path ? 1 : 0.6 }}>{tab.icon}</span>
-              {tab.name}
-              {activeTab === tab.path && <ChevronRight size={13} style={{ marginLeft: 'auto', opacity: 0.5 }} />}
-            </button>
-          ))}
-        </div>
+                    <button
+                      type="button"
+                      className="btn btn-sale btn-sm"
+                      disabled={savingId === company.id}
+                      onClick={() => saveCompany(company.id)}
+                    >
+                      <Save size={14} />
+                      <span>{savingId === company.id ? 'Saving...' : savedId === company.id ? 'Saved ✓' : 'Save Changes'}</span>
+                    </button>
+                  </div>
 
-        <div style={{ flex: 1, padding: '24px', minWidth: 0 }}>
-          <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--gray-800)', marginBottom: '20px' }}>
-            {activeItem.name}
+                  <div className="form-grid-2">
+                    <div className="form-group">
+                      <label className="form-label">Company Name *</label>
+                      <input
+                        className="form-input"
+                        value={draft.company_name ?? ''}
+                        onChange={e => updateDraft(company.id, 'company_name', e.target.value)}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">GST Number</label>
+                      <input
+                        className="form-input"
+                        value={draft.gst_number ?? ''}
+                        onChange={e => updateDraft(company.id, 'gst_number', e.target.value)}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Phone</label>
+                      <input
+                        className="form-input"
+                        value={draft.phone ?? ''}
+                        onChange={e => updateDraft(company.id, 'phone', e.target.value)}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Email</label>
+                      <input
+                        type="email"
+                        className="form-input"
+                        value={draft.email ?? ''}
+                        onChange={e => updateDraft(company.id, 'email', e.target.value)}
+                      />
+                    </div>
+
+                    <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                      <label className="form-label">Address</label>
+                      <textarea
+                        className="form-textarea"
+                        rows={2}
+                        value={draft.address ?? ''}
+                        onChange={e => updateDraft(company.id, 'address', e.target.value)}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Invoice Prefix *</label>
+                      <input
+                        className="form-input"
+                        value={draft.invoice_prefix ?? ''}
+                        onChange={e => updateDraft(company.id, 'invoice_prefix', e.target.value)}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Bank Name</label>
+                      <input
+                        className="form-input"
+                        value={draft.bank_name ?? ''}
+                        onChange={e => updateDraft(company.id, 'bank_name', e.target.value)}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Account Holder</label>
+                      <input
+                        className="form-input"
+                        value={draft.account_holder ?? ''}
+                        onChange={e => updateDraft(company.id, 'account_holder', e.target.value)}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Account Number</label>
+                      <input
+                        className="form-input"
+                        value={draft.account_number ?? ''}
+                        onChange={e => updateDraft(company.id, 'account_number', e.target.value)}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">IFSC Code</label>
+                      <input
+                        className="form-input"
+                        value={draft.ifsc_code ?? ''}
+                        onChange={e => updateDraft(company.id, 'ifsc_code', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          {activeTab === '/settings/business' && <BusinessInformationPanel />}
-          {activeTab === '/settings/about' && <AboutPanel />}
-          {activeTab === '/settings/import' && <ImportDataPanel />}
-          {activeTab !== '/settings/business' && activeTab !== '/settings/about' && activeTab !== '/settings/import' && <PlaceholderPanel name={activeItem.name} />}
-        </div>
-      </div>
+        )}
+
+        {/* TAB: ABOUT LEDGERA */}
+        {activeTabId === 'about' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '640px' }}>
+            <div className="card" style={{ padding: '24px', borderRadius: '12px' }}>
+              <div style={{ fontSize: '24px', fontWeight: 800, letterSpacing: '1px', color: '#0f172a' }}>
+                LEDGER<span style={{ color: '#e43b3b' }}>A</span>
+              </div>
+              <div style={{ fontSize: '13px', color: '#64748b', marginTop: '2px' }}>
+                Run Your Business Smarter
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '20px' }}>
+                <div style={{ padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8' }}>VERSION</div>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a', marginTop: '2px' }}>1.0.0 (Commercial Edition)</div>
+                </div>
+                <div style={{ padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8' }}>DATABASE</div>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a', marginTop: '2px' }}>SQLite Local High-Performance</div>
+                </div>
+              </div>
+
+              <div style={{ marginTop: '20px', padding: '14px', background: '#eff6ff', borderRadius: '8px', border: '1px solid #bfdbfe', fontSize: '13px', color: '#1e40af' }}>
+                Ledgera is designed for seamless retail, wholesale, distribution, and manufacturing businesses. All financial records and invoices are securely stored offline on this machine.
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* OTHER TABS FALLBACK */}
+        {activeTabId !== 'general' && activeTabId !== 'business' && activeTabId !== 'about' && (
+          <div className="card" style={{ padding: '40px', borderRadius: '12px', textAlign: 'center' }}>
+            <Sliders size={36} style={{ color: '#94a3b8', margin: '0 auto 12px' }} />
+            <div style={{ fontSize: '16px', fontWeight: 700, color: '#1e293b' }}>
+              {settingsTabs.find(t => t.id === activeTabId)?.name} Settings
+            </div>
+            <div style={{ fontSize: '13px', color: '#64748b', marginTop: '6px' }}>
+              Preferences and rules for {settingsTabs.find(t => t.id === activeTabId)?.name.toLowerCase()} are currently set to standard defaults.
+            </div>
+          </div>
+        )}
+      </main>
     </div>
   );
 };

@@ -1,315 +1,441 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { BarChart2, TrendingUp, TrendingDown, Percent, Award, Package, Download } from 'lucide-react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import {
+  BarChart2,
+  TrendingUp,
+  TrendingDown,
+  Percent,
+  Download,
+  Printer,
+  Calendar,
+  ChevronDown,
+  FileSpreadsheet,
+  CheckCircle2,
+  Receipt,
+  ShoppingCart,
+  Users,
+  Package
+} from 'lucide-react';
 import { reportApi, MonthlySummaryData } from '../../api/reportApi';
+import { invoiceApi } from '../../api/invoiceApi';
+import { expenseApi } from '../../api/expenseApi';
 import { useCompanyStore } from '../../store/companyStore';
 import { getErrorMessage } from '../../utils/errors';
+import { InvoiceWithDetails } from '../../../../shared/types/invoice';
+import { Expense } from '../../../../shared/types/expense';
+import * as XLSX from 'xlsx';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
-function fmt(paisa: number) {
+function fmt(amount: number) {
   return new Intl.NumberFormat('en-IN', {
     style: 'currency', currency: 'INR', minimumFractionDigits: 2, maximumFractionDigits: 2,
-  }).format(paisa);
-}
-
-function getCurrentFinancialYears() {
-  const now = new Date();
-  const years: number[] = [];
-  // Show last 3 financial years
-  for (let y = now.getFullYear() + 1; y >= now.getFullYear() - 2; y--) {
-    years.push(y);
-  }
-  return years;
-}
-
-function StatCard({
-  icon: Icon, label, value, sub, color
-}: {
-  icon: React.ElementType; label: string; value: string; sub?: string; color: string;
-}) {
-  return (
-    <div className="card card-padded" style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
-      <div style={{
-        width: 42, height: 42, borderRadius: '10px', display: 'flex',
-        alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-        background: color, color: '#fff',
-      }}>
-        <Icon size={20} />
-      </div>
-      <div>
-        <div style={{ fontSize: '12px', color: 'var(--gray-500)', marginBottom: '4px' }}>{label}</div>
-        <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--gray-900)' }}>{value}</div>
-        {sub && <div style={{ fontSize: '12px', color: 'var(--gray-400)', marginTop: '2px' }}>{sub}</div>}
-      </div>
-    </div>
-  );
-}
-
-function exportCsv(data: MonthlySummaryData, month: number, year: number) {
-  const rows: string[] = [];
-  rows.push(`Ledgera Monthly Report — ${MONTH_NAMES[month - 1]} ${year}`);
-  rows.push('');
-  rows.push('SALES SUMMARY');
-  rows.push(`Total Sales,${fmt(data.sales.total)}`);
-  rows.push(`Subtotal,${fmt(data.sales.subtotal)}`);
-  rows.push(`CGST,${fmt(data.sales.cgst)}`);
-  rows.push(`SGST,${fmt(data.sales.sgst)}`);
-  rows.push(`Total Discount,${fmt(data.sales.discount)}`);
-  rows.push(`Invoices,${data.sales.invoiceCount}`);
-  rows.push(`Paid,${data.sales.paidCount}`);
-  rows.push(`Sent,${data.sales.sentCount}`);
-  rows.push(`Draft,${data.sales.draftCount}`);
-  rows.push('');
-  rows.push('EXPENSES');
-  rows.push(`Total Expenses,${fmt(data.expenses.total)}`);
-  rows.push(`Expense Count,${data.expenses.count}`);
-  for (const [cat, amt] of Object.entries(data.expenses.byCategory)) {
-    rows.push(`  ${cat},${fmt(amt)}`);
-  }
-  rows.push('');
-  rows.push(`NET PROFIT,${fmt(data.profit)}`);
-  rows.push('');
-  rows.push('TOP CUSTOMERS');
-  rows.push('Customer,Total Sales,Invoice Count');
-  for (const c of data.topCustomers) {
-    rows.push(`${c.customer_name},${fmt(c.total)},${c.count}`);
-  }
-  rows.push('');
-  rows.push('TOP PRODUCTS');
-  rows.push('Product,Quantity,Revenue,GST Collected');
-  for (const p of data.topProducts) {
-    rows.push(`${p.product_name},${p.quantity},${fmt(p.revenue)},${fmt(p.gst_amount)}`);
-  }
-
-  const csv = rows.join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `Ledgera_Report_${year}_${String(month).padStart(2, '0')}.csv`;
-  link.click();
-  URL.revokeObjectURL(url);
+  }).format(amount);
 }
 
 export const Reports: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeReport = searchParams.get('tab') || 'sale';
+
   const { companies, selectedCompanyId } = useCompanyStore();
   const now = new Date();
 
-  const [companyFilter, setCompanyFilter] = useState<number | 'all'>('all');
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [data, setData] = useState<MonthlySummaryData | null>(null);
+  const [invoices, setInvoices] = useState<InvoiceWithDetails[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await reportApi.getMonthlySummary({
-        companyId: companyFilter !== 'all' ? companyFilter : undefined,
-        year,
-        month,
-      });
-      setData(res.data.data);
+      const [summaryRes, invRes, expRes] = await Promise.all([
+        reportApi.getMonthlySummary({
+          companyId: selectedCompanyId ?? undefined,
+          year,
+          month,
+        }),
+        invoiceApi.getAll({ companyId: selectedCompanyId ?? undefined }),
+        expenseApi.getAll({ companyId: selectedCompanyId ?? undefined })
+      ]);
+      setData(summaryRes.data.data);
+      setInvoices(invRes.data);
+      setExpenses(expRes.data);
     } catch (err: unknown) {
-      setError(getErrorMessage(err, 'Failed to load report'));
+      setError(getErrorMessage(err, 'Failed to load report data'));
     } finally {
       setLoading(false);
     }
-  }, [companyFilter, year, month]);
+  }, [selectedCompanyId, year, month]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
-  const profit = data?.profit ?? 0;
-  const profitColor = profit >= 0 ? '#16a34a' : '#dc2626';
+  const handleSelectReport = (reportKey: string) => {
+    setSearchParams({ tab: reportKey });
+  };
+
+  const handleExportExcel = () => {
+    if (!data) return;
+    const rows = [
+      { 'Metric': 'Total Sales', 'Amount': data.sales.total },
+      { 'Metric': 'Tax Collected (GST)', 'Amount': data.sales.cgst + data.sales.sgst },
+      { 'Metric': 'Total Expenses', 'Amount': data.expenses.total },
+      { 'Metric': 'Net Profit', 'Amount': data.profit },
+    ];
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Summary');
+    XLSX.writeFile(wb, `Report_${activeReport}_${year}_${month}.xlsx`);
+  };
 
   return (
-    <div>
-      {/* Header */}
-      <div className="page-header">
-        <div className="page-header-left">
-          <h1>Monthly Reports</h1>
-          <p>Sales, expenses, profit, and GST summary</p>
+    <div className="reports-wrapper">
+      {/* ── Left Category Navigation Sidebar matching Screenshot 212523 ── */}
+      <aside className="reports-sidebar">
+        {/* Transaction report category */}
+        <div className="reports-category-title">Transaction report</div>
+        <button
+          className={`reports-item-btn ${activeReport === 'sale' ? 'active' : ''}`}
+          onClick={() => handleSelectReport('sale')}
+        >
+          <span>Sale</span>
+        </button>
+        <button
+          className={`reports-item-btn ${activeReport === 'purchase' ? 'active' : ''}`}
+          onClick={() => handleSelectReport('purchase')}
+        >
+          <span>Purchase</span>
+        </button>
+        <button
+          className={`reports-item-btn ${activeReport === 'daybook' ? 'active' : ''}`}
+          onClick={() => handleSelectReport('daybook')}
+        >
+          <span>Day book</span>
+        </button>
+        <button
+          className={`reports-item-btn ${activeReport === 'all' ? 'active' : ''}`}
+          onClick={() => handleSelectReport('all')}
+        >
+          <span>All Transactions</span>
+        </button>
+        <button
+          className={`reports-item-btn ${activeReport === 'profit-loss' ? 'active' : ''}`}
+          onClick={() => handleSelectReport('profit-loss')}
+        >
+          <span>Profit And Loss</span>
+        </button>
+        <button
+          className={`reports-item-btn ${activeReport === 'bill-wise' ? 'active' : ''}`}
+          onClick={() => handleSelectReport('bill-wise')}
+        >
+          <span>Bill Wise Profit</span>
+        </button>
+        <button
+          className={`reports-item-btn ${activeReport === 'cashflow' ? 'active' : ''}`}
+          onClick={() => handleSelectReport('cashflow')}
+        >
+          <span>Cash flow</span>
+        </button>
+        <button
+          className={`reports-item-btn ${activeReport === 'trial-balance' ? 'active' : ''}`}
+          onClick={() => handleSelectReport('trial-balance')}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span>Trial Balance Report</span>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444' }} />
+          </div>
+        </button>
+        <button
+          className={`reports-item-btn ${activeReport === 'balance-sheet' ? 'active' : ''}`}
+          onClick={() => handleSelectReport('balance-sheet')}
+        >
+          <span>Balance Sheet</span>
+        </button>
+
+        {/* Party report category */}
+        <div className="reports-category-title" style={{ marginTop: '14px' }}>Party report</div>
+        <button
+          className={`reports-item-btn ${activeReport === 'party' ? 'active' : ''}`}
+          onClick={() => handleSelectReport('party')}
+        >
+          <span>Party Statement</span>
+        </button>
+        <button
+          className={`reports-item-btn ${activeReport === 'party-profit' ? 'active' : ''}`}
+          onClick={() => handleSelectReport('party-profit')}
+        >
+          <span>Party wise Profit & Loss</span>
+        </button>
+        <button
+          className={`reports-item-btn ${activeReport === 'all-parties' ? 'active' : ''}`}
+          onClick={() => handleSelectReport('all-parties')}
+        >
+          <span>All parties</span>
+        </button>
+        <button
+          className={`reports-item-btn ${activeReport === 'party-item' ? 'active' : ''}`}
+          onClick={() => handleSelectReport('party-item')}
+        >
+          <span>Party Report By Item</span>
+        </button>
+        <button
+          className={`reports-item-btn ${activeReport === 'sale-purchase-party' ? 'active' : ''}`}
+          onClick={() => handleSelectReport('sale-purchase-party')}
+        >
+          <span>Sale Purchase By Party</span>
+        </button>
+
+        {/* GST reports category */}
+        <div className="reports-category-title" style={{ marginTop: '14px' }}>GST reports</div>
+        <button
+          className={`reports-item-btn ${activeReport === 'gstr1' ? 'active' : ''}`}
+          onClick={() => handleSelectReport('gstr1')}
+        >
+          <span>GSTR 1</span>
+        </button>
+        <button
+          className={`reports-item-btn ${activeReport === 'gstr2' ? 'active' : ''}`}
+          onClick={() => handleSelectReport('gstr2')}
+        >
+          <span>GSTR 2</span>
+        </button>
+        <button
+          className={`reports-item-btn ${activeReport === 'gstr3b' ? 'active' : ''}`}
+          onClick={() => handleSelectReport('gstr3b')}
+        >
+          <span>GSTR 3 B</span>
+        </button>
+      </aside>
+
+      {/* ── Right Content Pane ── */}
+      <main className="reports-content-pane">
+        {/* Top Header & Period Selector */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <h1 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', textTransform: 'capitalize' }}>
+              {activeReport.replace('-', ' ')} Report
+            </h1>
+            <p style={{ fontSize: '13px', color: '#64748b' }}>
+              Showing {MONTH_NAMES[month - 1]} {year} data for {companies.find(c => c.id === selectedCompanyId)?.company_name || 'All Companies'}
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {/* Month Selector */}
+            <select
+              value={month}
+              onChange={e => setMonth(Number(e.target.value))}
+              className="form-select"
+              style={{ width: '130px', height: '34px' }}
+            >
+              {MONTH_NAMES.map((name, i) => (
+                <option key={name} value={i + 1}>{name}</option>
+              ))}
+            </select>
+
+            {/* Year Selector */}
+            <select
+              value={year}
+              onChange={e => setYear(Number(e.target.value))}
+              className="form-select"
+              style={{ width: '90px', height: '34px' }}
+            >
+              {[2024, 2025, 2026, 2027].map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+
+            {/* Excel Export Button */}
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={handleExportExcel}
+              style={{ height: '34px', gap: '6px' }}
+            >
+              <FileSpreadsheet size={15} style={{ color: '#16a34a' }} />
+              <span>Export</span>
+            </button>
+
+            {/* Print Button */}
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => window.print()}
+              style={{ height: '34px', gap: '6px' }}
+            >
+              <Printer size={15} style={{ color: '#64748b' }} />
+              <span>Print</span>
+            </button>
+          </div>
         </div>
-        {data && (
-          <button className="btn btn-secondary" onClick={() => exportCsv(data, month, year)}>
-            <Download size={15} /> Export CSV
-          </button>
+
+        {error && (
+          <div className="alert alert-error" style={{ marginBottom: '16px' }}>
+            {error}
+          </div>
         )}
-      </div>
 
-      {/* Filters */}
-      <div className="card card-padded" style={{ marginBottom: '20px', display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-        <div className="form-group" style={{ marginBottom: 0 }}>
-          <label className="form-label">Company</label>
-          <select
-            className="form-select"
-            value={companyFilter}
-            onChange={e => setCompanyFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-          >
-            <option value="all">All Companies</option>
-            {companies.map(c => (
-              <option key={c.id} value={c.id}>{c.company_name}</option>
-            ))}
-          </select>
-        </div>
-        <div className="form-group" style={{ marginBottom: 0 }}>
-          <label className="form-label">Year</label>
-          <select className="form-select" value={year} onChange={e => setYear(Number(e.target.value))}>
-            {getCurrentFinancialYears().map(y => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
-        </div>
-        <div className="form-group" style={{ marginBottom: 0 }}>
-          <label className="form-label">Month</label>
-          <select className="form-select" value={month} onChange={e => setMonth(Number(e.target.value))}>
-            {MONTH_NAMES.map((name, i) => (
-              <option key={i + 1} value={i + 1}>{name}</option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {error && <div className="alert alert-error" style={{ marginBottom: '20px' }}>{error}</div>}
-
-      {loading && <div className="loading-state" style={{ height: '200px' }}>Loading report…</div>}
-
-      {!loading && data && (
-        <>
-          {/* KPI Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '16px', marginBottom: '20px' }}>
-            <StatCard
-              icon={TrendingUp}
-              label="Total Sales"
-              value={fmt(data.sales.total)}
-              sub={`${data.sales.invoiceCount} invoice(s)`}
-              color="#2563eb"
-            />
-            <StatCard
-              icon={TrendingDown}
-              label="Total Expenses"
-              value={fmt(data.expenses.total)}
-              sub={`${data.expenses.count} expense(s)`}
-              color="#f59e0b"
-            />
-            <StatCard
-              icon={BarChart2}
-              label="Net Profit"
-              value={fmt(profit)}
-              sub={profit >= 0 ? 'Positive' : 'Loss'}
-              color={profit >= 0 ? '#16a34a' : '#dc2626'}
-            />
-            <StatCard
-              icon={Percent}
-              label="Total GST Collected"
-              value={fmt(data.sales.cgst + data.sales.sgst)}
-              sub={`CGST ${fmt(data.sales.cgst)} + SGST ${fmt(data.sales.sgst)}`}
-              color="#7c3aed"
-            />
+        {loading ? (
+          <div style={{ padding: '48px', textAlign: 'center', color: '#94a3b8' }}>
+            Generating report data...
           </div>
-
-          {/* GST + Discount Summary */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
-            <div className="card card-padded">
-              <div className="section-title">GST Summary</div>
-              {[
-                ['Taxable (Subtotal)', fmt(data.sales.subtotal)],
-                ['CGST', fmt(data.sales.cgst)],
-                ['SGST', fmt(data.sales.sgst)],
-                ['Total GST', fmt(data.sales.cgst + data.sales.sgst)],
-              ].map(([label, value]) => (
-                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--gray-100)', fontSize: '13.5px' }}>
-                  <span>{label}</span><span style={{ fontWeight: 500 }}>{value}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="card card-padded">
-              <div className="section-title">Invoice Status & Discounts</div>
-              {[
-                ['Paid Invoices', String(data.sales.paidCount)],
-                ['Sent (Unpaid)', String(data.sales.sentCount)],
-                ['Draft', String(data.sales.draftCount)],
-                ['Total Discounts Given', fmt(data.sales.discount)],
-              ].map(([label, value]) => (
-                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--gray-100)', fontSize: '13.5px' }}>
-                  <span>{label}</span><span style={{ fontWeight: 500 }}>{value}</span>
-                </div>
-              ))}
-            </div>
+        ) : !data ? (
+          <div style={{ padding: '48px', textAlign: 'center', color: '#64748b' }}>
+            No report data available for this period.
           </div>
-
-          {/* Top Customers + Top Products */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
-            <div className="card card-padded">
-              <div className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Award size={15} /> Top Customers
+        ) : (
+          <div>
+            {/* Summary Stat Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', marginBottom: '24px' }}>
+              <div className="card" style={{ padding: '16px', borderRadius: '10px' }}>
+                <div style={{ fontSize: '11.5px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>Total Sales</div>
+                <div style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', marginTop: '4px' }}>{fmt(data.sales.total)}</div>
+                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>{data.sales.invoiceCount} invoices</div>
               </div>
-              {data.topCustomers.length === 0 && (
-                <div style={{ fontSize: '13px', color: 'var(--gray-400)', paddingTop: '8px' }}>No sales this month</div>
-              )}
-              {data.topCustomers.map((c, i) => (
-                <div key={c.customer_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--gray-100)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--gray-400)', minWidth: '20px' }}>#{i + 1}</span>
-                    <div>
-                      <div style={{ fontSize: '13.5px', fontWeight: 500 }}>{c.customer_name}</div>
-                      <div style={{ fontSize: '12px', color: 'var(--gray-400)' }}>{c.count} invoice(s)</div>
-                    </div>
-                  </div>
-                  <span style={{ fontWeight: 600, fontSize: '13.5px' }}>{fmt(c.total)}</span>
-                </div>
-              ))}
-            </div>
 
-            <div className="card card-padded">
-              <div className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Package size={15} /> Top Products
+              <div className="card" style={{ padding: '16px', borderRadius: '10px' }}>
+                <div style={{ fontSize: '11.5px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>Tax Collected (GST)</div>
+                <div style={{ fontSize: '20px', fontWeight: 800, color: '#2563eb', marginTop: '4px' }}>{fmt(data.sales.cgst + data.sales.sgst)}</div>
+                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>CGST + SGST</div>
               </div>
-              {data.topProducts.length === 0 && (
-                <div style={{ fontSize: '13px', color: 'var(--gray-400)', paddingTop: '8px' }}>No sales this month</div>
-              )}
-              {data.topProducts.map((p, i) => (
-                <div key={p.product_name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--gray-100)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--gray-400)', minWidth: '20px' }}>#{i + 1}</span>
-                    <div>
-                      <div style={{ fontSize: '13.5px', fontWeight: 500 }}>{p.product_name}</div>
-                      <div style={{ fontSize: '12px', color: 'var(--gray-400)' }}>Qty: {p.quantity}</div>
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontWeight: 600, fontSize: '13.5px' }}>{fmt(p.revenue)}</div>
-                    <div style={{ fontSize: '12px', color: 'var(--gray-400)' }}>GST: {fmt(p.gst_amount)}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
 
-          {/* Expense Breakdown */}
-          {Object.keys(data.expenses.byCategory).length > 0 && (
-            <div className="card card-padded" style={{ marginBottom: '20px' }}>
-              <div className="section-title">Expense Breakdown by Category</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px', marginTop: '8px' }}>
-                {Object.entries(data.expenses.byCategory)
-                  .sort(([, a], [, b]) => b - a)
-                  .map(([cat, amt]) => (
-                    <div key={cat} style={{ padding: '10px 14px', background: 'var(--gray-50)', borderRadius: 'var(--radius-md)', border: '1px solid var(--gray-200)' }}>
-                      <div style={{ fontSize: '12px', color: 'var(--gray-500)', marginBottom: '4px' }}>{cat}</div>
-                      <div style={{ fontWeight: 600, fontSize: '15px' }}>{fmt(amt)}</div>
-                    </div>
-                  ))}
+              <div className="card" style={{ padding: '16px', borderRadius: '10px' }}>
+                <div style={{ fontSize: '11.5px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>Total Expenses</div>
+                <div style={{ fontSize: '20px', fontWeight: 800, color: '#d97706', marginTop: '4px' }}>{fmt(data.expenses.total)}</div>
+                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>{data.expenses.count} entries</div>
+              </div>
+
+              <div className="card" style={{ padding: '16px', borderRadius: '10px' }}>
+                <div style={{ fontSize: '11.5px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>Net Margin / Profit</div>
+                <div style={{ fontSize: '20px', fontWeight: 800, color: data.profit >= 0 ? '#16a34a' : '#ef4444', marginTop: '4px' }}>{fmt(data.profit)}</div>
+                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>Sales - Expenses</div>
               </div>
             </div>
-          )}
-        </>
-      )}
+
+            {/* Report Specific Tables */}
+            {(activeReport === 'sale' || activeReport === 'all' || activeReport === 'gstr1') && (
+              <div className="card" style={{ marginBottom: '24px', overflow: 'hidden' }}>
+                <div style={{ padding: '14px 20px', borderBottom: '1px solid #e2e8f0', fontWeight: 700, fontSize: '14px', color: '#1e293b' }}>
+                  Sales Invoices ({MONTH_NAMES[month - 1]} {year})
+                </div>
+                <div style={{ overflowX: 'auto' }}>
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Invoice #</th>
+                        <th>Date</th>
+                        <th>Customer</th>
+                        <th>Type</th>
+                        <th style={{ textAlign: 'right' }}>Taxable Amt</th>
+                        <th style={{ textAlign: 'right' }}>GST Amt</th>
+                        <th style={{ textAlign: 'right' }}>Total</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {invoices.length === 0 ? (
+                        <tr><td colSpan={8} style={{ textAlign: 'center', padding: '24px', color: '#94a3b8' }}>No sales records found.</td></tr>
+                      ) : (
+                        invoices.map(inv => (
+                          <tr key={inv.id}>
+                            <td className="col-mono" style={{ fontWeight: 600 }}>{inv.invoice_number}</td>
+                            <td>{inv.invoice_date}</td>
+                            <td className="col-primary">{inv.customer_name}</td>
+                            <td>{inv.invoice_type}</td>
+                            <td style={{ textAlign: 'right' }}>{fmt(inv.subtotal)}</td>
+                            <td style={{ textAlign: 'right' }}>{fmt(inv.cgst + inv.sgst)}</td>
+                            <td style={{ textAlign: 'right', fontWeight: 700 }}>{fmt(inv.grand_total)}</td>
+                            <td>
+                              <span className="badge badge-success">{inv.status}</span>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {(activeReport === 'purchase' || activeReport === 'all') && (
+              <div className="card" style={{ marginBottom: '24px', overflow: 'hidden' }}>
+                <div style={{ padding: '14px 20px', borderBottom: '1px solid #e2e8f0', fontWeight: 700, fontSize: '14px', color: '#1e293b' }}>
+                  Expenses & Purchases
+                </div>
+                <div style={{ overflowX: 'auto' }}>
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Category</th>
+                        <th>Payment Method</th>
+                        <th>Notes</th>
+                        <th style={{ textAlign: 'right' }}>Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {expenses.length === 0 ? (
+                        <tr><td colSpan={5} style={{ textAlign: 'center', padding: '24px', color: '#94a3b8' }}>No expense records found.</td></tr>
+                      ) : (
+                        expenses.map(exp => (
+                          <tr key={exp.id}>
+                            <td>{exp.expense_date}</td>
+                            <td className="col-primary">{exp.category}</td>
+                            <td>{exp.payment_method}</td>
+                            <td style={{ color: '#64748b' }}>{exp.notes || '—'}</td>
+                            <td style={{ textAlign: 'right', fontWeight: 700 }}>{fmt(exp.amount)}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Top Customers & Top Products */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div className="card" style={{ padding: '16px' }}>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', marginBottom: '12px' }}>
+                  Top Customers by Revenue
+                </div>
+                {data.topCustomers.length === 0 ? (
+                  <div style={{ color: '#94a3b8', fontSize: '13px' }}>No customer data for this period.</div>
+                ) : (
+                  data.topCustomers.map(c => (
+                    <div key={c.customer_name} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9', fontSize: '13px' }}>
+                      <span style={{ fontWeight: 600, color: '#334155' }}>{c.customer_name}</span>
+                      <span style={{ fontWeight: 700, color: '#0f172a' }}>{fmt(c.total)}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="card" style={{ padding: '16px' }}>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', marginBottom: '12px' }}>
+                  Top Products by Quantity Sold
+                </div>
+                {data.topProducts.length === 0 ? (
+                  <div style={{ color: '#94a3b8', fontSize: '13px' }}>No product sales recorded for this period.</div>
+                ) : (
+                  data.topProducts.map(p => (
+                    <div key={p.product_name} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9', fontSize: '13px' }}>
+                      <span style={{ fontWeight: 600, color: '#334155' }}>{p.product_name}</span>
+                      <span style={{ fontWeight: 700, color: '#0f172a' }}>{p.quantity} units ({fmt(p.revenue)})</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
     </div>
   );
 };
