@@ -1,4 +1,5 @@
 import { customerRepository } from './customer.repository';
+import crypto from 'crypto';
 import { CreateCustomerInput, UpdateCustomerInput, createCustomerSchema, updateCustomerSchema } from '../../../shared/types/customer';
 
 export class CustomerService {
@@ -13,7 +14,7 @@ export class CustomerService {
     }
 
     // Generate customer code
-    const randomStr = Math.floor(1000 + Math.random() * 9000);
+    const randomStr = crypto.randomInt(1000, 10000);
     const timeStr = Date.now().toString().slice(-4);
     const customer_code = `CUST-${timeStr}${randomStr}`;
 
@@ -49,6 +50,14 @@ export class CustomerService {
       throw new Error('Customer not found');
     }
     return await customerRepository.softDelete(id);
+  }
+
+  async getCustomerLedger(id: number) {
+    const customer = await customerRepository.findById(id);
+    if (!customer) {
+      throw new Error('Customer not found');
+    }
+    return await customerRepository.getLedger(id);
   }
 }
 

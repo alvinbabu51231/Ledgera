@@ -14,7 +14,8 @@ import {
   ChevronDown,
   Bell,
   HelpCircle,
-  Layers
+  Layers,
+  WalletCards
 } from 'lucide-react';
 import { useCompanyStore } from '../store/companyStore';
 
@@ -23,13 +24,14 @@ const primaryNavItems = [
   { name: 'Dashboard',  path: '/',          icon: <LayoutDashboard size={16} /> },
   { name: 'Customers',  path: '/customers', icon: <Users size={16} /> },
   { name: 'Products',   path: '/products',  icon: <Package size={16} /> },
+  { name: 'Invoices',   path: '/invoices',  icon: <Receipt size={16} /> },
+  { name: 'Expenses',   path: '/expenses',  icon: <WalletCards size={16} /> },
+  { name: 'Reports',    path: '/reports',   icon: <BarChart3 size={16} /> },
 ];
 
 const transactionNavItems = [
   { name: 'Quotations', path: '/quotations', icon: <FileText size={16} />,    soon: true },
-  { name: 'Invoices',   path: '/invoices',   icon: <Receipt size={16} />,     soon: true },
   { name: 'Payments',   path: '/payments',   icon: <CreditCard size={16} />,  soon: true },
-  { name: 'Reports',    path: '/reports',    icon: <BarChart3 size={16} />,    soon: true },
 ];
 
 export const Layout: React.FC = () => {
@@ -110,8 +112,15 @@ export const Layout: React.FC = () => {
           ))}
         </nav>
 
-        {/* Footer: Settings */}
+        {/* Footer: Settings & Tools */}
         <div className="sidebar-footer">
+          <NavLink
+            to="/import"
+            className={() => `sidebar-item ${isItemActive('/import') ? 'active' : ''}`}
+          >
+            <span className="sidebar-item-icon"><FileText size={16} /></span>
+            Import Data
+          </NavLink>
           <NavLink
             to="/settings"
             className={() => `sidebar-item ${isItemActive('/settings') ? 'active' : ''}`}

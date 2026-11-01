@@ -7,7 +7,7 @@ interface CustomerState {
   customers: Customer[];
   loading: boolean;
   error: string | null;
-  fetchCustomers: (search?: string) => Promise<void>;
+  fetchCustomers: (search?: string, limit?: number, offset?: number) => Promise<void>;
   deleteCustomer: (id: number) => Promise<void>;
 }
 
@@ -16,10 +16,10 @@ export const useCustomerStore = create<CustomerState>((set) => ({
   loading: false,
   error: null,
   
-  fetchCustomers: async (search?: string) => {
+  fetchCustomers: async (search?: string, limit: number = 50, offset?: number) => {
     set({ loading: true, error: null });
     try {
-      const response = await customerApi.getAll(search);
+      const response = await customerApi.getAll(search, limit, offset);
       // Filter out soft-deleted customers on frontend to be safe, or assume backend doesn't return them if we modified it.
       // Wait, backend repository currently returns all customers including soft-deleted if we didn't add a filter.
       // Let's filter here for safety.

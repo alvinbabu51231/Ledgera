@@ -1,6 +1,5 @@
-# CombERP
+# Ledgera
 
-Desktop-first business application for a manufacturing company.
 
 ## Setup
 

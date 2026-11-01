@@ -2,9 +2,13 @@ import { apiClient } from './apiClient';
 import { Product, CreateProductInput, UpdateProductInput } from '../../../shared/types/product';
 
 export const productApi = {
-  getAll: (search?: string) => {
-    const query = search ? `?search=${encodeURIComponent(search)}` : '';
-    return apiClient.get<{ success: boolean; data: Product[] }>(`/products${query}`);
+  getAll: (search?: string, limit?: number, offset?: number) => {
+    const query = new URLSearchParams();
+    if (search) query.set('search', search);
+    if (limit !== undefined) query.set('limit', String(limit));
+    if (offset !== undefined) query.set('offset', String(offset));
+    const qs = query.toString();
+    return apiClient.get<{ success: boolean; data: Product[] }>(`/products${qs ? `?${qs}` : ''}`);
   },
   
   getById: (id: number) => {

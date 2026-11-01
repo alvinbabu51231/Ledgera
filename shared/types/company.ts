@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const createCompanySchema = z.object({
   company_name: z.string().min(1, "Company name is required"),
-  gst_number: z.string().optional().nullable(),
+  gst_number: z.string().regex(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/, "Invalid GSTIN format").or(z.literal('')).optional().nullable(),
   address: z.string().optional().nullable(),
   phone: z.string().optional().nullable(),
   email: z.string().email("Invalid email").optional().nullable(),

@@ -7,7 +7,8 @@ import {
   Database,
   Info,
   ChevronRight,
-  Save
+  Save,
+  Upload
 } from 'lucide-react';
 import { UpdateCompanyInput } from '../../../shared/types/company';
 import { useCompanyStore } from '../store/companyStore';
@@ -19,6 +20,7 @@ const settingsTabs = [
   { name: 'GST Settings', path: '/settings/gst', icon: <Percent size={15} /> },
   { name: 'Invoice Settings', path: '/settings/invoice', icon: <Receipt size={15} /> },
   { name: 'Backup & Restore', path: '/settings/backup', icon: <Database size={15} /> },
+  { name: 'Import Data', path: '/settings/import', icon: <Upload size={15} /> },
   { name: 'About Ledgera', path: '/settings/about', icon: <Info size={15} /> },
 ];
 
@@ -97,6 +99,15 @@ const PlaceholderPanel: React.FC<{ name: string }> = ({ name }) => (
     </div>
     <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--gray-600)' }}>{name}</div>
     <div style={{ fontSize: '13px', color: 'var(--gray-400)' }}>This section will be available in a future update.</div>
+  </div>
+);
+
+const ImportDataPanel: React.FC = () => (
+  <div style={{ padding: '24px 0' }}>
+    <div className="card card-padded" style={{ boxShadow: 'none' }}>
+      <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--gray-800)' }}>EqSoft Import (Coming Soon)</div>
+      <div style={{ fontSize: '13px', color: 'var(--gray-500)', marginTop: '6px' }}>The importer is intentionally not enabled in this release.</div>
+    </div>
   </div>
 );
 
@@ -353,7 +364,8 @@ export const SettingsPage: React.FC = () => {
           </div>
           {activeTab === '/settings/business' && <BusinessInformationPanel />}
           {activeTab === '/settings/about' && <AboutPanel />}
-          {activeTab !== '/settings/business' && activeTab !== '/settings/about' && <PlaceholderPanel name={activeItem.name} />}
+          {activeTab === '/settings/import' && <ImportDataPanel />}
+          {activeTab !== '/settings/business' && activeTab !== '/settings/about' && activeTab !== '/settings/import' && <PlaceholderPanel name={activeItem.name} />}
         </div>
       </div>
     </div>

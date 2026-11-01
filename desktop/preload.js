@@ -1,6 +1,6 @@
-const { contextBridge } = require('electron');
+const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  // Expose IPC communication here in the future
-  platform: process.platform
+  platform: process.platform,
+  openWhatsApp: (nativeUrl, webUrl) => ipcRenderer.invoke('open-whatsapp', { nativeUrl, webUrl })
 });

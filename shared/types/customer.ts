@@ -5,7 +5,7 @@ export const createCustomerSchema = z.object({
   phone_number: z.string().min(1, "Phone number is required"),
   whatsapp_number: z.string().optional().nullable(),
   email: z.string().email("Invalid email").optional().nullable(),
-  gst_number: z.string().optional().nullable(),
+  gst_number: z.string().regex(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/, "Invalid GSTIN format").or(z.literal('')).optional().nullable(),
   billing_address: z.string().min(1, "Billing address is required"),
   delivery_address: z.string().min(1, "Delivery address is required"),
 });

@@ -1,4 +1,4 @@
-# CombERP — Implementation Plan
+# Ledgera — Implementation Plan
 
 > **Version:** 1.0
 > **Date:** June 2026
@@ -315,7 +315,7 @@ No server data in Zustand — all server data lives in TanStack Query cache.
 ## 4. Folder Structure
 
 ```
-comberp/                              ← root of the monorepo
+Ledgera/                              ← root of the monorepo
 │
 ├── package.json                      ← pnpm workspace root
 ├── pnpm-workspace.yaml               ← declares packages/
@@ -386,7 +386,7 @@ comberp/                              ← root of the monorepo
 │   │   │       └── date.utils.ts     ← date helpers (overdue calc, FY logic)
 │   │   │
 │   │   └── data/
-│   │       └── comberp.db            ← SQLite database file (gitignored)
+│   │       └── Ledgera.db            ← SQLite database file (gitignored)
 │   │
 │   ├── frontend/                     ← React application
 │   │   ├── package.json
@@ -664,7 +664,7 @@ When in doubt, ask: *"Does this let the owner do something faster than paper?"*
 If yes → build it now.
 If no → defer it.
 
-The killer feature for CombERP is: **Create Order → Generate Invoice → Record Payment → See Outstanding Balance.**
+The killer feature for Ledgera is: **Create Order → Generate Invoice → Record Payment → See Outstanding Balance.**
 
 Everything else is secondary.
 
@@ -767,10 +767,10 @@ The MVP is deployed as a Windows desktop application installed on the owner's PC
 
 **Update Strategy (MVP):**
 - Manual update: developer provides a new `.exe` installer
-- Owner replaces the old installation; SQLite DB is preserved in a known folder (`%APPDATA%\CombERP\`)
+- Owner replaces the old installation; SQLite DB is preserved in a known folder (`%APPDATA%\Ledgera\`)
 
 **Data Backup (MVP):**
-- Settings page → "Backup Database" button → copies `comberp.db` to a chosen folder
+- Settings page → "Backup Database" button → copies `Ledgera.db` to a chosen folder
 - Owner can email the `.db` file to themselves or copy to a USB drive
 - Restore: developer provides a "restore" tool (or manual file copy)
 
@@ -778,7 +778,7 @@ The MVP is deployed as a Windows desktop application installed on the owner's PC
 
 ### 10.2 v2 Deployment: LAN Web App (Optional)
 
-If the owner wants to access CombERP from multiple devices (phone, tablet, second PC) within the same Wi-Fi network:
+If the owner wants to access Ledgera from multiple devices (phone, tablet, second PC) within the same Wi-Fi network:
 
 - Run the Fastify backend as a background service on the owner's PC (using `pm2` or Windows Task Scheduler)
 - Frontend served as a static web app (Nginx on the same PC)
@@ -845,7 +845,7 @@ When the business outgrows a single PC (multiple branches, cloud backup, remote 
 | 2    | `pnpm build:backend` (TypeScript compile)                           |
 | 3    | `pnpm build:desktop` (electron-builder → produces `.exe`)           |
 | 4    | Test installer on a clean Windows machine                           |
-| 5    | Verify SQLite DB is created in `%APPDATA%\CombERP\` on first run    |
+| 5    | Verify SQLite DB is created in `%APPDATA%\Ledgera\` on first run    |
 | 6    | Verify seed data creates 2 companies                                |
 | 7    | Verify PDF invoice renders correctly                                |
 | 8    | Hand installer `.exe` to the owner                                  |

@@ -843,9 +843,21 @@ body {
   align-items: center;
   justify-content: center;
   padding: 64px 24px;
-  gap: 12px;
+  gap: 16px;
   color: var(--gray-500);
   font-size: 13.5px;
+}
+.loading-state::before {
+  content: '';
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--gray-200);
+  border-top-color: var(--primary-600);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 /* ---- Modal / Dialog ---- */
@@ -1000,8 +1012,33 @@ body {
 
 .settings-tab-item.active {
   background: var(--primary-50);
-  color: var(--primary-600);
+  color: var(--primary-700);
   font-weight: 500;
+}
+
+/* ---- Print Styles ---- */
+@media print {
+  .sidebar, .app-header, .page-header-left .btn, .btn, .alert {
+    display: none !important;
+  }
+  .app-body {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+  .app-main {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  body, .app-shell {
+    background: white !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .card {
+    box-shadow: none !important;
+    border: none !important;
+  }
 }
 
 /* ---- Scrollbar ---- */

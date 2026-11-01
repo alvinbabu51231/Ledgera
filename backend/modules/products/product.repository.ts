@@ -4,9 +4,11 @@ import { products } from './product.schema';
 import { CreateProductInput, UpdateProductInput } from '../../../shared/types/product';
 
 export const productRepository = {
-  findAll: async (search?: string) => {
+  findAll: async (search?: string, limit?: number, offset?: number) => {
+    let query = db.select().from(products).where(eq(products.is_active, true));
+    
     if (search) {
-      return db.select().from(products)
+      query = db.select().from(products)
         .where(
           and(
             eq(products.is_active, true),
@@ -16,9 +18,13 @@ export const productRepository = {
               like(products.hsn_code, `%${search}%`)
             )
           )
-        ).all();
+        );
     }
-    return db.select().from(products).where(eq(products.is_active, true)).all();
+
+    if (limit !== undefined) query = query.limit(limit) as any;
+    if (offset !== undefined) query = query.offset(offset) as any;
+
+    return query.all();
   },
 
   findById: async (id: number) => {

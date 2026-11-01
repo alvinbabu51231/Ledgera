@@ -2,8 +2,8 @@ import { productRepository } from './product.repository';
 import { CreateProductInput, UpdateProductInput, createProductSchema, updateProductSchema } from '../../../shared/types/product';
 
 export const productService = {
-  getAllProducts: async (search?: string) => {
-    return productRepository.findAll(search);
+  getAllProducts: async (search?: string, limit?: number, offset?: number) => {
+    return productRepository.findAll(search, limit, offset);
   },
 
   getProductById: async (id: number) => {

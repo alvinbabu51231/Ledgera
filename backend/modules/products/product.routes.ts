@@ -5,9 +5,9 @@ import { ZodError } from 'zod';
 
 export default async function productRoutes(fastify: FastifyInstance) {
   fastify.get('/', async (request: FastifyRequest, reply: FastifyReply) => {
-    const { search } = request.query as { search?: string };
+    const { search, limit, offset } = request.query as { search?: string, limit?: string, offset?: string };
     try {
-      const products = await productService.getAllProducts(search);
+      const products = await productService.getAllProducts(search, limit ? Number(limit) : undefined, offset ? Number(offset) : undefined);
       return reply.send({ success: true, data: products });
     } catch (error: any) {
       return reply.status(500).send({ success: false, message: error.message });

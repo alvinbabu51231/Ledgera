@@ -1,4 +1,4 @@
-# CombERP — Simplified MVP Scope
+# Ledgera — Simplified MVP Scope
 
 > **Version:** 1.0
 > **Date:** June 2026
@@ -627,7 +627,7 @@ The API layer is the same in all three stages. Only the database and deployment 
 ## 8. Suggested Project Structure
 
 ```
-comberp/
+Ledgera/
 ├── app/                          # Electron desktop wrapper
 │   ├── main.js                   # Electron main process
 │   ├── preload.js                # Context bridge
@@ -872,7 +872,7 @@ The desktop application is structured around a **left sidebar navigation**, matc
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  [Company Logo]    CombERP         [Company Switcher ▼] │
+│  [Company Logo]    Ledgera         [Company Switcher ▼] │
 ├──────────┬──────────────────────────────────────────────┤
 │          │                                              │
 │ SIDEBAR  │           MAIN CONTENT AREA                 │

@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 
 export const customers = sqliteTable('customers', {
@@ -11,6 +12,6 @@ export const customers = sqliteTable('customers', {
   billing_address: text('billing_address').notNull(),
   delivery_address: text('delivery_address'),
   is_active: integer('is_active', { mode: 'boolean' }).default(true).notNull(),
-  created_at: text('created_at').default('CURRENT_TIMESTAMP').notNull(),
-  updated_at: text('updated_at').default('CURRENT_TIMESTAMP').notNull(),
+  created_at: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updated_at: text('updated_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
 });

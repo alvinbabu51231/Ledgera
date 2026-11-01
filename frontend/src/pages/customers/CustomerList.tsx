@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCustomerStore } from '../../store/customerStore';
-import { Plus, Search, Pencil, Trash2, Users } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Users, Eye } from 'lucide-react';
 
 export const CustomerList: React.FC = () => {
   const { customers, loading, error, fetchCustomers, deleteCustomer } = useCustomerStore();
@@ -104,6 +104,13 @@ export const CustomerList: React.FC = () => {
                     </td>
                     <td>
                       <div className="table-actions">
+                        <Link
+                          to={`/customers/view/${customer.id}`}
+                          className="btn btn-ghost btn-icon-sm"
+                          title="View customer"
+                        >
+                          <Eye size={14} />
+                        </Link>
                         <Link
                           to={`/customers/edit/${customer.id}`}
                           className="btn btn-ghost btn-icon-sm"

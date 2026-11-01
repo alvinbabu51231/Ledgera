@@ -1,25 +1,33 @@
 {
-  "name": "comberp",
+  "name": "ledgera",
   "version": "1.0.0",
-  "description": "CombERP - Single owner manufacturing ERP",
+  "description": "Ledgera - Production-ready ERP for manufacturing businesses",
   "scripts": {
     "dev:frontend": "vite",
     "dev:backend": "tsx backend/main.ts",
     "dev:desktop": "wait-on http://localhost:5173 && electron desktop/main.js",
     "dev": "concurrently \"pnpm dev:backend\" \"pnpm dev:frontend\" \"pnpm dev:desktop\"",
     "build:frontend": "vite build",
-    "build:desktop": "electron-builder",
+    "build:backend": "esbuild backend/main.ts --bundle --platform=node --format=cjs --target=node20 --external:libsql --outfile=dist/backend/main.cjs",
+    "build:desktop": "pnpm build:backend && electron-builder",
     "start": "pnpm dev"
   },
   "dependencies": {
     "@fastify/cors": "^9.0.1",
     "@libsql/client": "^0.17.3",
+    "@libsql/win32-x64-msvc": "0.5.29",
+    "@neon-rs/load": "0.0.4",
+    "detect-libc": "2.0.2",
     "drizzle-orm": "^0.31.2",
     "fastify": "^4.27.0",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
+    "libsql": "0.5.29",
     "lucide-react": "^0.395.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.24.0",
+    "xlsx": "^0.18.5",
     "zod": "^3.23.8",
     "zustand": "^4.5.2"
   },
@@ -39,14 +47,18 @@
   },
   "main": "desktop/main.js",
   "build": {
-    "appId": "com.comberp.app",
-    "productName": "CombERP",
+    "appId": "com.ledgera.erp",
+    "productName": "Ledgera",
+    "asarUnpack": [
+      "node_modules/@libsql/win32-x64-msvc/**/*"
+    ],
     "directories": {
       "output": "dist/electron"
     },
     "files": [
       "desktop/**/*",
       "dist/frontend/**/*",
+      "dist/backend/**/*",
       "backend/**/*",
       "shared/**/*",
       "package.json"

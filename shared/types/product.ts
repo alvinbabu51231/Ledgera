@@ -6,9 +6,9 @@ export const createProductSchema = z.object({
   category: z.string().min(1, "Category is required"),
   size: z.string().min(1, "Size is required"),
   unit: z.enum(["Gross", "Dozen", "Piece"]),
-  selling_price: z.number().min(0, "Selling price must be positive"),
-  manufacturing_cost: z.number().min(0, "Manufacturing cost must be positive"),
-  gst_percentage: z.number().min(0).max(100, "GST must be between 0 and 100"),
+  selling_price: z.number().int().min(0, "Selling price must be positive"),
+  manufacturing_cost: z.number().int().min(0, "Manufacturing cost must be positive"),
+  gst_percentage: z.number().int().min(0).max(100, "GST must be between 0 and 100"),
   hsn_code: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
 });

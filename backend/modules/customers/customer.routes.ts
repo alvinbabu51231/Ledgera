@@ -24,6 +24,16 @@ export default async function customerRoutes(fastify: FastifyInstance) {
     }
   });
 
+  fastify.get('/:id/ledger', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: string };
+    try {
+      const ledger = await customerService.getCustomerLedger(Number(id));
+      return reply.send({ success: true, data: ledger });
+    } catch (error: any) {
+      return reply.status(404).send({ success: false, message: error.message });
+    }
+  });
+
   fastify.post('/', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const data = request.body as CreateCustomerInput;

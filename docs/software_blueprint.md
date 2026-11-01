@@ -1,4 +1,4 @@
-# CombERP — Software Blueprint
+# Ledgera — Software Blueprint
 
 > **Version:** 1.0
 > **Date:** June 2026
@@ -35,7 +35,7 @@
 
 ### 1.2 Goals
 
-CombERP aims to digitise the end-to-end operations of the comb manufacturing business — from capturing a customer order to dispatching the finished goods and collecting payment. It will replace paper registers with structured data, provide real-time visibility into production status and financial health, and eliminate manual reconciliation of outstanding balances.
+Ledgera aims to digitise the end-to-end operations of the comb manufacturing business — from capturing a customer order to dispatching the finished goods and collecting payment. It will replace paper registers with structured data, provide real-time visibility into production status and financial health, and eliminate manual reconciliation of outstanding balances.
 
 ### 1.3 Design Principles
 

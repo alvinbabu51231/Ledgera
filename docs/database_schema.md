@@ -1,10 +1,10 @@
-# CombERP — Database Design Document
+# Ledgera — Database Design Document
 
 > **Version:** 1.0
 > **Date:** June 2026
 > **Source of Truth:** docs/mvp_scope.md
 > **Database Engine:** SQLite (MVP) — portable to PostgreSQL in v2
-> **Audience:** Developers implementing the CombERP backend
+> **Audience:** Developers implementing the Ledgera backend
 
 ---
 
@@ -1158,7 +1158,7 @@ Month Expenses:
 **Why:** Automatic stock tracking requires: BOM (bill of materials) + automatic deduction on production completion + automatic addition on purchase bill receipt. All three are deferred to v2. In MVP, the owner updates `products.stock_qty` manually — this matches the paper-based workflow they are used to.
 
 ### Decision 5: Integer PKs, not UUIDs
-**Why:** CombERP is a single-owner desktop application with an SQLite local database. There is no distributed system, no data replication, and no need for globally unique identifiers. Integer auto-increment PKs are faster to index, easier to read, and simpler to work with in queries and URLs.
+**Why:** Ledgera is a single-owner desktop application with an SQLite local database. There is no distributed system, no data replication, and no need for globally unique identifiers. Integer auto-increment PKs are faster to index, easier to read, and simpler to work with in queries and URLs.
 
 ### Decision 6: Soft deletes via `is_active`
 **Why:** Deleting a customer who has historical invoices would break referential integrity. Soft deletes let the owner "archive" a customer without losing any financial history. The application filters `WHERE is_active = 1` in all normal list views.

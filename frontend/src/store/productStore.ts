@@ -7,7 +7,7 @@ interface ProductState {
   products: Product[];
   loading: boolean;
   error: string | null;
-  fetchProducts: (search?: string) => Promise<void>;
+  fetchProducts: (search?: string, limit?: number, offset?: number) => Promise<void>;
   deleteProduct: (id: number) => Promise<void>;
 }
 
@@ -16,10 +16,10 @@ export const useProductStore = create<ProductState>((set) => ({
   loading: false,
   error: null,
   
-  fetchProducts: async (search?: string) => {
+  fetchProducts: async (search?: string, limit: number = 50, offset?: number) => {
     set({ loading: true, error: null });
     try {
-      const response = await productApi.getAll(search);
+      const response = await productApi.getAll(search, limit, offset);
       set({ products: response.data, loading: false });
     } catch (err: unknown) {
       set({ error: getErrorMessage(err, 'Failed to fetch products'), loading: false });

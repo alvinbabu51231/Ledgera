@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 
 export const companies = sqliteTable('companies', {
@@ -13,6 +14,6 @@ export const companies = sqliteTable('companies', {
   ifsc_code: text('ifsc_code'),
   invoice_prefix: text('invoice_prefix').notNull().default('INV'),
   is_active: integer('is_active', { mode: 'boolean' }).default(true).notNull(),
-  created_at: text('created_at').default('CURRENT_TIMESTAMP').notNull(),
-  updated_at: text('updated_at').default('CURRENT_TIMESTAMP').notNull(),
+  created_at: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updated_at: text('updated_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
